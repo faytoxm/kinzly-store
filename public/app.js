@@ -1,226 +1,294 @@
-let tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Проверка доступности товаров при загрузке страницы
-async function checkStoreAvailability() {
-    try {
-        const res = await fetch('/api/store-status');
-        const data = await res.json();
-
-        // Если магазин закрыт глобально
-        if (!data.isOpen) {
-            document.getElementById('store-status-banner').innerHTML = '🔴 <span>Orders are temporarily closed</span>';
-            document.getElementById('store-status-banner').style.background = 'rgba(239, 68, 68, 0.1)';
-            document.getElementById('store-status-banner').style.color = '#ef4444';
-        }
-
-        // Если какой-то товар на стопе
-        if (data.disabledProducts) {
-            document.querySelectorAll('.product-card').forEach(card => {
-                const titleEl = card.querySelector('h3');
-                if (titleEl) {
-                    const productName = titleEl.innerText.split(' — ')[0].trim();
-                    if (data.disabledProducts[productName] === false) {
-                        const btn = card.querySelector('.buy-btn');
-                        if (btn) {
-                            btn.disabled = true;
-                            btn.innerText = 'Sold Out';
-                            btn.style.background = '#334155';
-                            btn.style.cursor = 'not-allowed';
-                        }
-                    }
-                }
-            });
-        }
-    } catch (e) {
-        console.error('Failed to check store status', e);
-    }
-}
-
-// Запускаем при загрузке
-checkStoreAvailability();
+let currentLang = 'en';
+let storeData = { isOpen: true, disabledProducts: {} };
 
 const translations = {
     en: {
-        banner_title: "Everything you love. On your terms.",
-        banner_desc: "Big creativity, music, and discoveries. Choose your service — we handle the activation.",
-        status_open: "Orders are open",
-        catalog_title: "Subscription Catalog",
-        profile_title: "Profile",
-        orders_title: "My Orders",
-        no_orders: "No active orders yet.",
-        help_title: "Help & FAQ",
-        nav_store: "Store",
-        nav_profile: "Profile",
-        nav_orders: "Orders",
-        nav_help: "Help",
-        btn_get: "Get Subscription",
-        faq_q1: "How do I receive my subscription?",
-        faq_a1: "After payment, your order goes to processing. Once ready, you will receive an activation link directly in our bot.",
-        faq_q2: "Is payment secure?",
-        faq_a2: "Yes! All payments are processed securely via Stripe in Euros (€).",
-        reviews_title: "Customer Reviews",
-        reviews_desc: "Have you made a purchase? Leave your feedback in our support chat or bot!",
-        support_btn: "Contact Support & Write Review",
-        modal_title: "⚠️ Important Notice",
-        modal_text: "The activation link for Google AI Pro is strictly valid for <strong>1 hour</strong> from the moment it is generated and sent to you. Please ensure you are ready to activate it immediately upon receipt!",
-        modal_cancel: "Cancel",
-        modal_proceed: "I Understand, Proceed"
+        tabShop: "Store",
+        tabOrders: "Orders",
+        tabReviews: "Reviews",
+        tabHelp: "Help",
+        bannerTitle: "European Digital Subscriptions",
+        bannerSubtitle: "Fast activation & secure payments via Stripe",
+        ordersTitle: "My Orders",
+        ordersSubtitle: "Track your active and completed purchases",
+        reviewsTitle: "Customer Reviews",
+        reviewsSubtitle: "Share your experience with Vesly Store",
+        leaveReview: "Leave a Review",
+        namePlaceholder: "Your Name / Handle",
+        reviewPlaceholder: "Write your feedback...",
+        sendReviewBtn: "Submit Review",
+        helpTitle: "How it works",
+        step1Title: "Choose Subscription",
+        step1Desc: "Select the desired service from our verified catalog.",
+        step2Title: "Secure Payment",
+        step2Desc: "Pay securely in Euros (€) via Stripe integration.",
+        step3Title: "Instant Delivery",
+        step3Desc: "Receive your activation link directly in your Telegram chat.",
+        supportText: "Need help or custom requests?",
+        supportBtn: "Contact Manager",
+        buyBtn: "Buy",
+        soldOut: "Sold Out",
+        modalTitle: "Important Note",
+        modalText: "Please ensure you activate your subscription within 1 hour after receiving the link.",
+        modalBtn: "I Understand",
+        noOrders: "You haven't made any purchases yet.",
+        noReviews: "No reviews yet. Be the first!"
     },
     ru: {
-        banner_title: "Всё, что любишь. На твоих условиях.",
-        banner_desc: "Большое творчество, музыка и открытия. Выбирай сервис — подключение берём на себя.",
-        status_open: "Приём заказов открыт",
-        catalog_title: "Каталог подписок",
-        profile_title: "Личный кабинет",
-        orders_title: "Мои заказы",
-        no_orders: "Пока нет активных заказов.",
-        help_title: "Помощь и FAQ",
-        nav_store: "Магазин",
-        nav_profile: "Профиль",
-        nav_orders: "Заказы",
-        nav_help: "Помощь",
-        btn_get: "Оформить",
-        faq_q1: "Как получить подписку?",
-        faq_a1: "После оплаты ваш заказ поступает в обработку. Ссылка на активацию придет вам прямо в чат бота.",
-        faq_q2: "Безопасна ли оплата?",
-        faq_a2: "Да! Все платежи обрабатываются через защищенную систему Stripe в евро (€).",
-        reviews_title: "Отзывы клиентов",
-        reviews_desc: "Совершили покупку? Оставьте свой отзыв в нашем чате поддержки или боте!",
-        support_btn: "Поддержка и написание отзыва",
-        modal_title: "⚠️ Важное предупреждение",
-        modal_text: "Ссылка на активацию Google AI Pro действует строго <strong>1 час</strong> с момента её генерации и отправки. Пожалуйста, убедитесь, что вы готовы активировать её сразу после получения!",
-        modal_cancel: "Отмена",
-        modal_proceed: "Понятно, продолжить"
+        tabShop: "Магазин",
+        tabOrders: "Заказы",
+        tabReviews: "Отзывы",
+        tabHelp: "Помощь",
+        bannerTitle: "Цифровые подписки в Европе",
+        bannerSubtitle: "Быстрая активация и безопасная оплата через Stripe",
+        ordersTitle: "Мои заказы",
+        ordersSubtitle: "История ваших покупок и статусы",
+        reviewsTitle: "Отзывы клиентов",
+        reviewsSubtitle: "Поделитесь впечатлением о Vesly Store",
+        leaveReview: "Оставить отзыв",
+        namePlaceholder: "Ваше имя / ник",
+        reviewPlaceholder: "Напишите ваш отзыв...",
+        sendReviewBtn: "Отправить отзыв",
+        helpTitle: "Как это работает",
+        step1Title: "Выберите подписку",
+        step1Desc: "Выберите нужный сервис из нашего каталога.",
+        step2Title: "Безопасная оплата",
+        step2Desc: "Оплачивайте в евро (€) через защищенный Stripe.",
+        step3Title: "Быстрая доставка",
+        step3Desc: "Получите ссылку активации прямо в чат Telegram.",
+        supportText: "Нужна помощь или другой сервис?",
+        supportBtn: "Написать менеджеру",
+        buyBtn: "Купить",
+        soldOut: "Нет в наличии",
+        modalTitle: "Важное предупреждение",
+        modalText: "Пожалуйста, активируйте подписку в течение 1 часа после получения ссылки.",
+        modalBtn: "Понятно",
+        noOrders: "У вас пока нет покупок.",
+        noReviews: "Пока нет отзывов. Станьте первым!"
     }
 };
 
-let currentLang = 'en';
+const products = [
+    { name: 'Google AI Pro', desc: 'Advanced AI features & storage', price: 1499, oldPrice: 2200, discount: '-32%' },
+    { name: 'ChatGPT Plus', desc: 'GPT-4o & priority access', price: 1999, oldPrice: 2500, discount: '-20%' },
+    { name: 'Duolingo Super', desc: 'Ad-free language learning', price: 799, oldPrice: 1399, discount: '-43%' },
+    { name: 'Spotify Premium', desc: 'Music without limits', price: 599, oldPrice: 1099, discount: '-45%' },
+    { name: 'Adobe Express Premium', desc: 'Pro design templates', price: 899, oldPrice: 1499, discount: '-40%' },
+    { name: 'CapCut Pro', desc: 'Advanced video editing features', price: 699, oldPrice: 1199, discount: '-42%' },
+    { name: 'Canva Pro', desc: 'Unlimited graphic design tools', price: 799, oldPrice: 1299, discount: '-38%' },
+    { name: 'Coursera Premium', desc: 'Access to professional certificates', price: 1599, oldPrice: 2999, discount: '-46%' }
+];
 
-function toggleLanguage() {
+// Переключение вкладок с плавной анимацией
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    const targetBtn = document.querySelector(`[data-tab="${tabId}"]`);
+    const targetContent = document.getElementById(`${tabId}Tab`);
+
+    if (targetBtn) targetBtn.classList.add('active');
+    if (targetContent) targetContent.classList.add('active');
+
+    if (tabId === 'orders') loadUserOrders();
+    if (tabId === 'reviews') loadReviews();
+}
+
+// Смена языка
+document.getElementById('langToggleBtn').addEventListener('click', () => {
     currentLang = currentLang === 'en' ? 'ru' : 'en';
-    document.getElementById('current-lang').innerText = currentLang.toUpperCase();
-    
+    document.getElementById('langToggleBtn').innerText = currentLang.toUpperCase();
+    updateTexts();
+    renderProducts();
+});
+
+function updateTexts() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[currentLang][key]) {
-            el.innerHTML = translations[currentLang][key];
+            el.innerText = translations[currentLang][key];
         }
     });
-
-    document.querySelectorAll('.buy-btn').forEach(btn => {
-        btn.innerText = translations[currentLang].btn_get;
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[currentLang][key]) {
+            el.placeholder = translations[currentLang][key];
+        }
     });
 }
 
-function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-    event.currentTarget.classList.add('active');
-
-    if (tabName === 'orders') {
-        loadUserOrders();
+// Загрузка статусов и рендер товаров
+async function fetchStoreStatus() {
+    try {
+        const res = await fetch('/api/store-status');
+        const data = await res.json();
+        storeData = data;
+        renderProducts();
+    } catch (e) {
+        renderProducts();
     }
 }
 
-// Загрузка реальных данных профиля из Telegram
-const tgUser = tg.initDataUnsafe?.user;
-const userId = tgUser?.id || 12345;
+function renderProducts() {
+    const grid = document.getElementById('productsGrid');
+    grid.innerHTML = '';
 
-if (tgUser) {
-    document.getElementById('user-name').innerText = `${tgUser.first_name} ${tgUser.last_name || ''}`;
-    document.getElementById('user-handle').innerText = tgUser.username ? `@${tgUser.username}` : 'No username';
-    document.getElementById('user-id').innerText = `ID: ${tgUser.id}`;
-    
-    // Первая буква имени на аватарку
-    if (tgUser.first_name) {
-        document.getElementById('user-avatar').innerText = tgUser.first_name.charAt(0).toUpperCase();
-    }
-} else {
-    document.getElementById('user-name').innerText = 'Demo User';
-    document.getElementById('user-handle').innerText = '@demo_mode';
-    document.getElementById('user-id').innerText = 'ID: 12345';
+    products.forEach(p => {
+        const isDisabled = storeData.disabledProducts[p.name] === false || !storeData.isOpen;
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <div class="product-info">
+                <h3>${p.name}</h3>
+                <p class="product-desc">${p.desc}</p>
+                <div class="price-box">
+                    <span class="old-price">€${(p.oldPrice / 100).toFixed(2)}</span>
+                    <span class="current-price">€${(p.price / 100).toFixed(2)}</span>
+                    <span class="discount-badge">${p.discount}</span>
+                </div>
+            </div>
+            <button class="buy-btn ${isDisabled ? 'disabled' : ''}" onclick="handleBuy('${p.name}', ${p.price})">
+                ${isDisabled ? translations[currentLang].soldOut : translations[currentLang].buyBtn}
+            </button>
+        `;
+        grid.appendChild(card);
+    });
 }
 
-// Модальное окно для Google AI
-let pendingProduct = null;
-let pendingAmount = 0;
+function handleBuy(productName, amount) {
+    if (!storeData.isOpen || storeData.disabledProducts[productName] === false) {
+        alert('This product is temporarily unavailable.');
+        return;
+    }
 
-function openGoogleAiWarning(productName, amount) {
-    pendingProduct = productName;
-    pendingAmount = amount;
-    document.getElementById('modal-warning').style.display = 'flex';
+    if (productName === 'Google AI Pro') {
+        document.getElementById('warningModal').style.display = 'flex';
+        window.pendingPurchase = { productName, amount };
+    } else {
+        proceedCheckout(productName, amount);
+    }
 }
 
 function closeModal() {
-    document.getElementById('modal-warning').style.display = 'none';
-    pendingProduct = null;
-    pendingAmount = 0;
+    document.getElementById('warningModal').style.display = 'none';
+    if (window.pendingPurchase) {
+        proceedCheckout(window.pendingPurchase.productName, window.pendingPurchase.amount);
+        window.pendingPurchase = null;
+    }
 }
 
-document.getElementById('modal-confirm-btn').onclick = function() {
-    if (pendingProduct) {
-        buySubscription(pendingProduct, pendingAmount);
-        closeModal();
+async function proceedCheckout(productName, amount) {
+    const userId = tg.initDataUnsafe?.user?.id || '123456789';
+    try {
+        const res = await fetch('/api/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productName, amount, customerTelegramId: String(userId) })
+        });
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert(data.error || 'Checkout error');
+        }
+    } catch (e) {
+        alert('Server error during checkout.');
     }
-};
+}
 
+// Загрузка заказов пользователя
 async function loadUserOrders() {
-    const ordersContainer = document.getElementById('tab-orders');
+    const userId = tg.initDataUnsafe?.user?.id || '123456789';
+    const list = document.getElementById('ordersList');
+    list.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Loading...</p>';
+
     try {
         const res = await fetch(`/api/orders/${userId}`);
         const orders = await res.json();
 
-        let html = `<h2 data-i18n="orders_title">${translations[currentLang].orders_title}</h2>`;
-
-        if (orders.length === 0) {
-            html += `<p class="empty-text" style="color: #94a3b8; margin-top: 10px;">${translations[currentLang].no_orders}</p>`;
-        } else {
-            html += `<div class="orders-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">`;
-            orders.forEach(order => {
-                const statusBadge = order.status === 'completed' 
-                    ? '<span style="color: #22c55e;">🟢 Completed</span>' 
-                    : '<span style="color: #eab308;">⏳ Pending (Awaiting activation)</span>';
-                
-                const linkBlock = order.link 
-                    ? `<div style="margin-top: 6px;"><a href="${order.link}" target="_blank" style="color: #3b82f6; word-break: break-all;">🔗 Access Link (1 hour): ${order.link}</a></div>` 
-                    : '';
-
-                html += `
-                    <div style="background: #181b24; padding: 12px; border-radius: 12px; border: 1px solid #262b38; font-size: 13px;">
-                        <strong>#${order.id} - ${order.productName}</strong><br>
-                        Price: €${(order.amount / 100).toFixed(2)}<br>
-                        Status: ${statusBadge}
-                        ${linkBlock}
-                    </div>
-                `;
-            });
-            html += `</div>`;
+        if (!orders || orders.length === 0) {
+            list.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">${translations[currentLang].noOrders}</p>`;
+            return;
         }
-        ordersContainer.innerHTML = html;
+
+        list.innerHTML = '';
+        orders.forEach(o => {
+            const item = document.createElement('div');
+            item.className = 'order-item';
+            item.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <strong style="font-size:14px;">${o.productName}</strong>
+                    <span style="font-size:12px; font-weight:700; color:${o.status === 'paid' ? 'var(--success-color)' : 'var(--text-muted)'};">[${o.status.toUpperCase()}]</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Amount: €${(o.amount/100).toFixed(2)}</div>
+                ${o.link ? `<div style="margin-top:8px;"><a href="${o.link}" target="_blank" style="color:var(--accent-color); font-size:13px; text-decoration:none; font-weight:600;">🔗 Activation Link</a></div>` : ''}
+            `;
+            list.appendChild(item);
+        });
     } catch (e) {
-        console.error('Failed to load orders', e);
+        list.innerHTML = '<p style="color:var(--danger-color); font-size:13px;">Failed to load orders.</p>';
     }
 }
 
-async function buySubscription(productName, amount) {
+// Загрузка отзывов
+async function loadReviews() {
+    const list = document.getElementById('reviewsList');
+    list.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Loading...</p>';
+
     try {
-        const response = await fetch('/api/create-checkout-session', {
+        const res = await fetch('/api/reviews');
+        const reviews = await res.json();
+
+        if (!reviews || reviews.length === 0) {
+            list.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">${translations[currentLang].noReviews}</p>`;
+            return;
+        }
+
+        list.innerHTML = '';
+        reviews.forEach(r => {
+            const item = document.createElement('div');
+            item.className = 'review-item';
+            item.innerHTML = `
+                <div class="review-author">${r.userFullName}</div>
+                <div class="review-text">"${r.text}"</div>
+            `;
+            list.appendChild(item);
+        });
+    } catch (e) {
+        list.innerHTML = '<p style="color:var(--danger-color); font-size:13px;">Failed to load reviews.</p>';
+    }
+}
+
+async function submitReview() {
+    const userFullName = document.getElementById('reviewName').value.trim();
+    const text = document.getElementById('reviewText').value.trim();
+
+    if (!userFullName || !text) {
+        alert('Please fill in all fields.');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/reviews', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productName, amount, customerTelegramId: userId })
+            body: JSON.stringify({ userFullName, text })
         });
-
-        const data = await response.json();
-        
-        if (data.url) {
-            window.location.href = data.url;
+        const data = await res.json();
+        if (data.success) {
+            alert('Review submitted for moderation!');
+            document.getElementById('reviewName').value = '';
+            document.getElementById('reviewText').value = '';
         } else {
-            alert(data.error || 'Payment initialization error');
+            alert('Error submitting review.');
         }
     } catch (e) {
-        alert('Server connection error');
+        alert('Server error.');
     }
 }
+
+// Инициализация при старте
+fetchStoreStatus();

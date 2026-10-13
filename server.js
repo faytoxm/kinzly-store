@@ -41,7 +41,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
 
-// Список администраторов из .env
 const ADMIN_IDS = process.env.ADMIN_IDS 
     ? process.env.ADMIN_IDS.split(',').map(id => Number(id.trim())) 
     : [];
@@ -54,7 +53,6 @@ let storeOpen = true;
 
 // ==================== REST API ДЛЯ МИНИ-ПРИЛОЖЕНИЯ ====================
 
-// API: Получить статус магазина и стоп-лист товаров
 app.get('/api/store-status', (req, res) => {
     db.all(`SELECT productName, isActive FROM product_status`, [], (err, rows) => {
         const disabledProducts = {};
@@ -67,7 +65,6 @@ app.get('/api/store-status', (req, res) => {
     });
 });
 
-// API: Получить одобренные отзывы для сайта
 app.get('/api/reviews', (req, res) => {
     db.all(`SELECT userFullName, text FROM reviews WHERE status = 'approved' ORDER BY id DESC LIMIT 10`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: 'Database error' });
@@ -75,7 +72,6 @@ app.get('/api/reviews', (req, res) => {
     });
 });
 
-// API: Добавление отзыва от пользователя
 app.post('/api/reviews', express.json(), (req, res) => {
     const { userFullName, text } = req.body;
     if (!userFullName || !text) return res.status(400).json({ error: 'Missing fields' });
@@ -83,13 +79,9 @@ app.post('/api/reviews', express.json(), (req, res) => {
     db.run(`INSERT INTO reviews (userFullName, text, status) VALUES (?, ?, 'pending')`, [userFullName, text], function(err) {
         if (err) return res.status(500).json({ error: 'Database error' });
         
-        // Уведомляем админов о новом отзыве
         ADMIN_IDS.forEach(adminId => {
             bot.telegram.sendMessage(adminId, 
-                `💬 **New Review for Moderation!**\n` +
-                `👤 From: ${userFullName}\n` +
-                `✍️ Text: "${text}"\n\n` +
-                `Use /admin to approve or delete.`
+                `💬 New Review for Moderation!\nFrom: ${userFullName}\nText: "${text}"\n\nUse /admin to approve or delete.`
             ).catch(() => {});
         });
 
@@ -97,7 +89,6 @@ app.post('/api/reviews', express.json(), (req, res) => {
     });
 });
 
-// API: История заказов пользователя
 app.get('/api/orders/:userId', (req, res) => {
     const userId = req.params.userId;
     db.all(`SELECT * FROM orders WHERE customerTelegramId = ? ORDER BY id DESC`, [userId], (err, rows) => {
@@ -106,7 +97,6 @@ app.get('/api/orders/:userId', (req, res) => {
     });
 });
 
-// API: Создание сессии оплаты в Stripe
 app.post('/api/create-checkout-session', express.json(), async (req, res) => {
     try {
         if (!storeOpen) {
@@ -166,17 +156,12 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
         db.run(`UPDATE orders SET status = 'paid' WHERE id = ?`, [orderId], (err) => {
             if (!err) {
                 bot.telegram.sendMessage(customerTelegramId,
-                    `🎉 **Payment Successful!**\n` +
-                    `📦 Product: ${productName}\n` +
-                    `Your order is being processed. An administrator will send your activation link shortly!`
+                    `🎉 Payment Successful!\nProduct: ${productName}\nYour order is being processed. An administrator will send your activation link shortly!`
                 ).catch(() => {});
 
                 ADMIN_IDS.forEach(adminId => {
                     bot.telegram.sendMessage(adminId, 
-                        `💰 **PAID ORDER #${orderId}**\n` +
-                        `📦 Product: ${productName}\n` +
-                        `👤 User ID: ${customerTelegramId}\n\n` +
-                        `Use /fulfill ${orderId} <link> to send subscription.`
+                        `💰 PAID ORDER #${orderId}\nProduct: ${productName}\nUser ID: ${customerTelegramId}\n\nUse /fulfill ${orderId} <link> to send subscription.`
                     ).catch(() => {});
                 });
             }
@@ -189,9 +174,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== ТЕЛЕГРАМ БОТ И ИНТЕРФЕЙС ====================
-
-// Команда /start
-// ==================== ТЕЛЕГРАМ БОТ И ИНТЕРФЕЙС (ПРОСТОЙ ТЕКСТ БЕЗ MARKDOWN) ====================
 
 bot.start((ctx) => {
     const userName = ctx.from.first_name || 'there';
@@ -267,15 +249,13 @@ bot.action('bot_back', (ctx) => {
     ctx.answerCbQuery();
 });
 
-// ==================== АДМИН-ПАНЕЛЬ В TELEGRAM ====================
+// ==================== АДМИН-ПАНЕЛЬ ====================
 
 bot.command('admin', (ctx) => {
     if (!isAdmin(ctx.from.id)) return ctx.reply('Access denied.');
 
     ctx.reply(
-        `👑 Vesly Store Admin Panel\n` +
-        `Global status: ${storeOpen ? 'OPEN' : 'CLOSED'}\n\n` +
-        `Choose an action:`,
+        `👑 Vesly Store Admin Panel\nGlobal status: ${storeOpen ? 'OPEN' : 'CLOSED'}\n\nChoose an action:`,
         Markup.inlineKeyboard([
             [Markup.button.callback(storeOpen ? '🔴 Close Shop' : '🟢 Open Shop', 'toggle_shop')],
             [Markup.button.callback('📦 Manage Products (Stop-list)', 'manage_products')],
@@ -435,10 +415,7 @@ bot.command('fulfill', (ctx) => {
 
         db.run(`UPDATE orders SET status = 'completed', link = ? WHERE id = ?`, [link, orderId], () => {
             bot.telegram.sendMessage(order.customerTelegramId,
-                `🎉 Your subscription is ready!\n` +
-                `📦 Product: ${order.productName}\n` +
-                `🔗 Activation Link (valid for 1 hour): ${link}\n` +
-                `⚠️ Please activate it immediately!`
+                `🎉 Your subscription is ready!\nProduct: ${order.productName}\nActivation Link: ${link}`
             ).catch(() => {});
 
             ctx.reply(`Order #${orderId} fulfilled successfully!`);
@@ -446,8 +423,13 @@ bot.command('fulfill', (ctx) => {
     });
 });
 
-bot.launch();
-console.log('Vesly Store bot and server running successfully...');
+// Безопасный запуск бота с перехватом ошибок
+try {
+    bot.launch();
+    console.log('Vesly Store bot launched successfully.');
+} catch (e) {
+    console.error('Failed to launch bot:', e.message);
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
