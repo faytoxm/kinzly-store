@@ -51,15 +51,6 @@ function isAdmin(userId) {
 
 let storeOpen = true;
 
-// Автоматическая очистка брошенных pending-заказов старше 20 минут
-setInterval(() => {
-    db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
-        if (!err) {
-            // Можно залогировать, сколько заказов было очищено
-        }
-    });
-}, 15 * 60 * 1000); // Проверяет каждые 15 минут
-
 // ==================== REST API ДЛЯ МИНИ-ПРИЛОЖЕНИЯ ====================
 
 app.get('/api/store-status', (req, res) => {
@@ -106,6 +97,7 @@ app.get('/api/orders/:userId', (req, res) => {
     });
 });
 
+// Создание нового заказа и сессии оплаты
 app.post('/api/create-checkout-session', express.json(), async (req, res) => {
     try {
         if (!storeOpen) {
@@ -149,6 +141,38 @@ app.post('/api/create-checkout-session', express.json(), async (req, res) => {
     } catch (error) {
         console.error('Stripe error:', error.message);
         res.status(500).json({ error: 'Stripe connection error.' });
+    }
+});
+
+// Повторная оплата существующего pending заказа (без дублирования в базе)
+app.post('/api/retry-checkout', express.json(), async (req, res) => {
+    try {
+        if (!storeOpen) return res.status(400).json({ error: 'Store closed' });
+        const { orderId } = req.body;
+
+        db.get(`SELECT * FROM orders WHERE id = ? AND status = 'pending'`, [orderId], async (err, order) => {
+            if (err || !order) return res.status(404).json({ error: 'Order not found or already paid' });
+
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items: [{
+                    price_data: {
+                        currency: 'eur',
+                        product_data: { name: order.productName },
+                        unit_amount: order.amount,
+                    },
+                    quantity: 1,
+                }],
+                mode: 'payment',
+                success_url: `${process.env.WEBAPP_URL || 'https://vesly-store.onrender.com'}?success=true`,
+                cancel_url: `${process.env.WEBAPP_URL || 'https://vesly-store.onrender.com'}?canceled=true`,
+                metadata: { orderId: String(order.id), customerTelegramId: String(order.customerTelegramId), productName: order.productName }
+            });
+
+            res.json({ url: session.url });
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
@@ -432,7 +456,7 @@ bot.command('fulfill', (ctx) => {
     });
 });
 
-// Безопасный запуск бота с перехватом ошибок
+// Запуск бота
 try {
     bot.launch();
     console.log('Vesly Store bot launched successfully.');

@@ -73,15 +73,16 @@ const translations = {
     }
 };
 
+// Твои правильные актуальные цены
 const products = [
-    { name: 'Google AI Pro', desc: 'Advanced AI features & storage', price: 1499, oldPrice: 2200, discount: '-32%' },
-    { name: 'ChatGPT Plus', desc: 'GPT-4o & priority access', price: 1999, oldPrice: 2500, discount: '-20%' },
-    { name: 'Duolingo Super', desc: 'Ad-free language learning', price: 799, oldPrice: 1399, discount: '-43%' },
-    { name: 'Spotify Premium', desc: 'Music without limits', price: 599, oldPrice: 1099, discount: '-45%' },
-    { name: 'Adobe Express Premium', desc: 'Pro design templates', price: 899, oldPrice: 1499, discount: '-40%' },
-    { name: 'CapCut Pro', desc: 'Advanced video editing features', price: 699, oldPrice: 1199, discount: '-42%' },
-    { name: 'Canva Pro', desc: 'Unlimited graphic design tools', price: 799, oldPrice: 1299, discount: '-38%' },
-    { name: 'Coursera Premium', desc: 'Access to professional certificates', price: 1599, oldPrice: 2999, discount: '-46%' }
+    { name: 'Google AI Pro', desc: 'Advanced AI features & storage', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'ChatGPT Plus', desc: 'GPT-4o & priority access', price: 1499, oldPrice: 2499, discount: '-40%' },
+    { name: 'Duolingo Super', desc: 'Ad-free language learning', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'Spotify Premium', desc: 'Music without limits', price: 699, oldPrice: 999, discount: '-30%' },
+    { name: 'Adobe Express Premium', desc: 'Pro design templates', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'CapCut Pro', desc: 'Advanced video editing features', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'Canva Pro', desc: 'Unlimited graphic design tools', price: 1499, oldPrice: 2399, discount: '-40%' },
+    { name: 'Coursera Premium', desc: 'Access to professional certificates', price: 1999, oldPrice: 2999, discount: '-33%' }
 ];
 
 function switchTab(tabId) {
@@ -198,12 +199,30 @@ async function proceedCheckout(productName, amount) {
     }
 }
 
-// Загрузка профиля (исправлено имя без 'User') и заказов с кнопкой оплаты pending
+// Повторная оплата конкретного заказа по его ID (без создания дубликатов)
+async function retryCheckout(orderId) {
+    try {
+        const res = await fetch('/api/retry-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId })
+        });
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert(data.error || 'Checkout error');
+        }
+    } catch (e) {
+        alert('Server error during checkout.');
+    }
+}
+
 async function loadUserProfileAndOrders() {
     const user = tg.initDataUnsafe?.user || {};
     const userId = user.id || '123456789';
     const firstName = user.first_name || 'Vesly';
-    const lastName = user.last_name ? ` ${user.last_name}` : ''; // Без дефолтного 'User'
+    const lastName = user.last_name ? ` ${user.last_name}` : '';
     const username = user.username ? `@${user.username}` : 'No username';
     const photoUrl = user.photo_url || '';
 
@@ -243,7 +262,7 @@ async function loadUserProfileAndOrders() {
                         <span style="font-size:12px; font-weight:700; color:${isPending ? 'var(--text-muted)' : 'var(--success-color)'};">[${o.status.toUpperCase()}]</span>
                     </div>
                     <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Amount: €${(o.amount/100).toFixed(2)}</div>
-                    ${isPending ? `<button class="btn-primary" style="margin-top:8px; padding:8px 12px; font-size:13px;" onclick="proceedCheckout('${o.productName}', ${o.amount})">${translations[currentLang].payNow}</button>` : ''}
+                    ${isPending ? `<button class="btn-primary" style="margin-top:8px; padding:8px 12px; font-size:13px;" onclick="retryCheckout(${o.id})">${translations[currentLang].payNow}</button>` : ''}
                     ${o.link ? `<div style="margin-top:8px;"><a href="${o.link}" target="_blank" style="color:var(--accent-color); font-size:13px; text-decoration:none; font-weight:600;">🔗 Activation Link</a></div>` : ''}
                 </div>
             `;
