@@ -12,8 +12,8 @@ const translations = {
         tabHelp: "Help",
         bannerTitle: "European Digital Subscriptions",
         bannerSubtitle: "Fast activation & secure payments via Stripe",
-        ordersTitle: "My Orders",
-        ordersSubtitle: "Track your active and completed purchases",
+        ordersTitle: "My Orders & Profile",
+        ordersSubtitle: "Your Telegram details and purchase history",
         reviewsTitle: "Customer Reviews",
         reviewsSubtitle: "Share your experience with Vesly Store",
         leaveReview: "Leave a Review",
@@ -44,8 +44,8 @@ const translations = {
         tabHelp: "Помощь",
         bannerTitle: "Цифровые подписки в Европе",
         bannerSubtitle: "Быстрая активация и безопасная оплата через Stripe",
-        ordersTitle: "Мои заказы",
-        ordersSubtitle: "История ваших покупок и статусы",
+        ordersTitle: "Профиль и Заказы",
+        ordersSubtitle: "Ваш Telegram аккаунт и история покупок",
         reviewsTitle: "Отзывы клиентов",
         reviewsSubtitle: "Поделитесь впечатлением о Vesly Store",
         leaveReview: "Оставить отзыв",
@@ -71,6 +71,7 @@ const translations = {
     }
 };
 
+// Твои оригинальные цены и товары
 const products = [
     { name: 'Google AI Pro', desc: 'Advanced AI features & storage', price: 1499, oldPrice: 2200, discount: '-32%' },
     { name: 'ChatGPT Plus', desc: 'GPT-4o & priority access', price: 1999, oldPrice: 2500, discount: '-20%' },
@@ -93,7 +94,7 @@ function switchTab(tabId) {
     if (targetBtn) targetBtn.classList.add('active');
     if (targetContent) targetContent.classList.add('active');
 
-    if (tabId === 'orders') loadUserOrders();
+    if (tabId === 'orders') loadUserProfileAndOrders();
     if (tabId === 'reviews') loadReviews();
 }
 
@@ -199,37 +200,57 @@ async function proceedCheckout(productName, amount) {
     }
 }
 
-// Загрузка заказов пользователя
-async function loadUserOrders() {
-    const userId = tg.initDataUnsafe?.user?.id || '123456789';
+// Загрузка профиля Telegram и заказов пользователя
+async function loadUserProfileAndOrders() {
+    const user = tg.initDataUnsafe?.user || {};
+    const userId = user.id || '123456789';
+    const firstName = user.first_name || 'Vesly';
+    const lastName = user.last_name || 'User';
+    const username = user.username ? `@${user.username}` : 'No username';
+    const photoUrl = user.photo_url || '';
+
+    const profileContainer = document.getElementById('userProfileCard');
+    profileContainer.innerHTML = `
+        <div class="profile-card">
+            <div class="profile-avatar">
+                ${photoUrl ? `<img src="${photoUrl}" alt="Avatar">` : `<span>👤</span>`}
+            </div>
+            <div class="profile-info">
+                <h3>${firstName} ${lastName}</h3>
+                <p class="profile-username">${username}</p>
+                <span class="profile-id">ID: ${userId}</span>
+            </div>
+        </div>
+    `;
+
     const list = document.getElementById('ordersList');
-    list.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Loading...</p>';
+    list.innerHTML = '<p style="color:var(--text-muted); font-size:13px; text-align:center;">Loading orders...</p>';
 
     try {
         const res = await fetch(`/api/orders/${userId}`);
         const orders = await res.json();
 
         if (!orders || orders.length === 0) {
-            list.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">${translations[currentLang].noOrders}</p>`;
+            list.innerHTML = `<p style="color:var(--text-muted); font-size:13px; text-align:center; padding: 10px;">${translations[currentLang].noOrders}</p>`;
             return;
         }
 
-        list.innerHTML = '';
+        let ordersHtml = '';
         orders.forEach(o => {
-            const item = document.createElement('div');
-            item.className = 'order-item';
-            item.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <strong style="font-size:14px;">${o.productName}</strong>
-                    <span style="font-size:12px; font-weight:700; color:${o.status === 'paid' ? 'var(--success-color)' : 'var(--text-muted)'};">[${o.status.toUpperCase()}]</span>
+            ordersHtml += `
+                <div class="order-item">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <strong style="font-size:14px;">${o.productName}</strong>
+                        <span style="font-size:12px; font-weight:700; color:${o.status === 'paid' ? 'var(--success-color)' : 'var(--text-muted)'};">[${o.status.toUpperCase()}]</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Amount: €${(o.amount/100).toFixed(2)}</div>
+                    ${o.link ? `<div style="margin-top:8px;"><a href="${o.link}" target="_blank" style="color:var(--accent-color); font-size:13px; text-decoration:none; font-weight:600;">🔗 Activation Link</a></div>` : ''}
                 </div>
-                <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Amount: €${(o.amount/100).toFixed(2)}</div>
-                ${o.link ? `<div style="margin-top:8px;"><a href="${o.link}" target="_blank" style="color:var(--accent-color); font-size:13px; text-decoration:none; font-weight:600;">🔗 Activation Link</a></div>` : ''}
             `;
-            list.appendChild(item);
         });
+        list.innerHTML = ordersHtml;
     } catch (e) {
-        list.innerHTML = '<p style="color:var(--danger-color); font-size:13px;">Failed to load orders.</p>';
+        list.innerHTML = '<p style="color:var(--danger-color); font-size:13px; text-align:center;">Failed to load orders.</p>';
     }
 }
 
@@ -290,5 +311,4 @@ async function submitReview() {
     }
 }
 
-// Инициализация при старте
 fetchStoreStatus();

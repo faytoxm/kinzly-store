@@ -34,7 +34,7 @@
             </button>
         </nav>
 
-        <!-- Основной контент (Вкладки с плавным переходом) -->
+        <!-- Основной контент -->
         <main class="main-content">
             <!-- Вкладка Магазин -->
             <section id="shopTab" class="tab-content active">
@@ -42,20 +42,21 @@
                     <h2 data-i18n="bannerTitle">European Digital Subscriptions</h2>
                     <p data-i18n="bannerSubtitle">Fast activation & secure payments via Stripe</p>
                 </div>
-                <div id="productsGrid" class="products-grid">
-                    <!-- Генерация товаров через JS -->
-                </div>
+                <div id="productsGrid" class="products-grid"></div>
             </section>
 
-            <!-- Вкладка Заказы -->
+            <!-- Вкладка Заказы и Профиль -->
             <section id="ordersTab" class="tab-content">
                 <div class="section-title">
-                    <h2 data-i18n="ordersTitle">My Orders</h2>
-                    <p data-i18n="ordersSubtitle">Track your active and completed purchases</p>
+                    <h2 data-i18n="ordersTitle">My Orders & Profile</h2>
+                    <p data-i18n="ordersSubtitle">Your Telegram details and purchase history</p>
                 </div>
-                <div id="ordersList" class="orders-list">
-                    <!-- Загружается динамически -->
-                </div>
+
+                <!-- Карточка профиля Telegram -->
+                <div id="userProfileCard"></div>
+
+                <!-- Список заказов -->
+                <div id="ordersList" class="orders-list"></div>
             </section>
 
             <!-- Вкладка Отзывы -->
@@ -65,7 +66,6 @@
                     <p data-i18n="reviewsSubtitle">Share your experience with Vesly Store</p>
                 </div>
                 
-                <!-- Форма добавления отзыва -->
                 <div class="review-form-card">
                     <h3 data-i18n="leaveReview">Leave a Review</h3>
                     <input type="text" id="reviewName" placeholder="Your Name / Handle" data-i18n-placeholder="namePlaceholder">
@@ -73,9 +73,7 @@
                     <button class="btn-primary" onclick="submitReview()" data-i18n="sendReviewBtn">Submit Review</button>
                 </div>
 
-                <div id="reviewsList" class="reviews-list">
-                    <!-- Динамические отзывы -->
-                </div>
+                <div id="reviewsList" class="reviews-list"></div>
             </section>
 
             <!-- Вкладка Помощь -->
@@ -114,7 +112,7 @@
         </main>
     </div>
 
-    <!-- Модальное окно предупреждения (для Google AI) -->
+    <!-- Модальное окно -->
     <div id="warningModal" class="modal">
         <div class="modal-content">
             <div class="modal-icon">⚠️</div>
