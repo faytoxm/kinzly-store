@@ -51,6 +51,15 @@ function isAdmin(userId) {
 
 let storeOpen = true;
 
+// Автоматическая очистка брошенных pending-заказов старше 20 минут
+setInterval(() => {
+    db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
+        if (!err) {
+            // Можно залогировать, сколько заказов было очищено
+        }
+    });
+}, 15 * 60 * 1000); // Проверяет каждые 15 минут
+
 // ==================== REST API ДЛЯ МИНИ-ПРИЛОЖЕНИЯ ====================
 
 app.get('/api/store-status', (req, res) => {

@@ -31,6 +31,7 @@ const translations = {
         supportBtn: "Contact Manager",
         buyBtn: "Buy",
         soldOut: "Sold Out",
+        payNow: "Pay Now 💳",
         modalTitle: "Important Note",
         modalText: "Please ensure you activate your subscription within 1 hour after receiving the link.",
         modalBtn: "I Understand",
@@ -63,6 +64,7 @@ const translations = {
         supportBtn: "Написать менеджеру",
         buyBtn: "Купить",
         soldOut: "Нет в наличии",
+        payNow: "Оплатить 💳",
         modalTitle: "Важное предупреждение",
         modalText: "Пожалуйста, активируйте подписку в течение 1 часа после получения ссылки.",
         modalBtn: "Понятно",
@@ -71,7 +73,6 @@ const translations = {
     }
 };
 
-// Твои оригинальные цены и товары
 const products = [
     { name: 'Google AI Pro', desc: 'Advanced AI features & storage', price: 1499, oldPrice: 2200, discount: '-32%' },
     { name: 'ChatGPT Plus', desc: 'GPT-4o & priority access', price: 1999, oldPrice: 2500, discount: '-20%' },
@@ -83,7 +84,6 @@ const products = [
     { name: 'Coursera Premium', desc: 'Access to professional certificates', price: 1599, oldPrice: 2999, discount: '-46%' }
 ];
 
-// Переключение вкладок с плавной анимацией
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -98,7 +98,6 @@ function switchTab(tabId) {
     if (tabId === 'reviews') loadReviews();
 }
 
-// Смена языка
 document.getElementById('langToggleBtn').addEventListener('click', () => {
     currentLang = currentLang === 'en' ? 'ru' : 'en';
     document.getElementById('langToggleBtn').innerText = currentLang.toUpperCase();
@@ -121,7 +120,6 @@ function updateTexts() {
     });
 }
 
-// Загрузка статусов и рендер товаров
 async function fetchStoreStatus() {
     try {
         const res = await fetch('/api/store-status');
@@ -200,12 +198,12 @@ async function proceedCheckout(productName, amount) {
     }
 }
 
-// Загрузка профиля Telegram и заказов пользователя
+// Загрузка профиля (исправлено имя без 'User') и заказов с кнопкой оплаты pending
 async function loadUserProfileAndOrders() {
     const user = tg.initDataUnsafe?.user || {};
     const userId = user.id || '123456789';
     const firstName = user.first_name || 'Vesly';
-    const lastName = user.last_name || 'User';
+    const lastName = user.last_name ? ` ${user.last_name}` : ''; // Без дефолтного 'User'
     const username = user.username ? `@${user.username}` : 'No username';
     const photoUrl = user.photo_url || '';
 
@@ -216,7 +214,7 @@ async function loadUserProfileAndOrders() {
                 ${photoUrl ? `<img src="${photoUrl}" alt="Avatar">` : `<span>👤</span>`}
             </div>
             <div class="profile-info">
-                <h3>${firstName} ${lastName}</h3>
+                <h3>${firstName}${lastName}</h3>
                 <p class="profile-username">${username}</p>
                 <span class="profile-id">ID: ${userId}</span>
             </div>
@@ -237,13 +235,15 @@ async function loadUserProfileAndOrders() {
 
         let ordersHtml = '';
         orders.forEach(o => {
+            const isPending = o.status === 'pending';
             ordersHtml += `
                 <div class="order-item">
                     <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
                         <strong style="font-size:14px;">${o.productName}</strong>
-                        <span style="font-size:12px; font-weight:700; color:${o.status === 'paid' ? 'var(--success-color)' : 'var(--text-muted)'};">[${o.status.toUpperCase()}]</span>
+                        <span style="font-size:12px; font-weight:700; color:${isPending ? 'var(--text-muted)' : 'var(--success-color)'};">[${o.status.toUpperCase()}]</span>
                     </div>
                     <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Amount: €${(o.amount/100).toFixed(2)}</div>
+                    ${isPending ? `<button class="btn-primary" style="margin-top:8px; padding:8px 12px; font-size:13px;" onclick="proceedCheckout('${o.productName}', ${o.amount})">${translations[currentLang].payNow}</button>` : ''}
                     ${o.link ? `<div style="margin-top:8px;"><a href="${o.link}" target="_blank" style="color:var(--accent-color); font-size:13px; text-decoration:none; font-weight:600;">🔗 Activation Link</a></div>` : ''}
                 </div>
             `;
@@ -254,7 +254,6 @@ async function loadUserProfileAndOrders() {
     }
 }
 
-// Загрузка отзывов
 async function loadReviews() {
     const list = document.getElementById('reviewsList');
     list.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Loading...</p>';
