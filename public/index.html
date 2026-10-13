@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vesly Store</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Шапка -->
+        <header class="header">
+            <div class="logo">Vesly Store</div>
+            <div class="header-controls">
+                <button class="lang-switch" onclick="toggleLanguage()">🌐 <span id="current-lang">EN</span></button>
+            </div>
+        </header>
+
+        <!-- Основной контент (Вкладки) -->
+        <main class="content">
+            <!-- Вкладка: Магазин -->
+            <div id="tab-store" class="tab-content active">
+                <div class="banner">
+                    <h2 data-i18n="banner_title">Everything you love. On your terms.</h2>
+                    <p data-i18n="banner_desc">Big creativity, music, and discoveries. Choose your service — we handle the activation.</p>
+                </div>
+
+                <div id="store-status-banner" class="status-badge">
+                    🟢 <span data-i18n="status_open">Orders are open</span>
+                </div>
+
+                <div class="section-title" data-i18n="catalog_title">Subscription Catalog</div>
+                
+                <div class="products-grid">
+                    <!-- 1. Google AI Pro (с предупреждением на 1 час) -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #8b5cf6;">Bestseller</div>
+                        <h3>Google AI Pro — 18 months</h3>
+                        <p>Gemini Advanced, Veo, NotebookLM Plus & 5GB Google One</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€10.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€22.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="openGoogleAiWarning('Google AI Pro', 1000)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. ChatGPT Plus -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">Special Offer</div>
+                        <h3>ChatGPT Plus — 1 month</h3>
+                        <p>Access to GPT-4o, advanced data analysis, custom GPTs</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€15.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€25.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('ChatGPT Plus', 1500)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Duolingo Super -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">-50% SALE</div>
+                        <h3>Duolingo Super — 12 months</h3>
+                        <p>Unlimited hearts, no ads, personalized practice</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€10.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€20.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('Duolingo Super', 1000)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 4. Spotify Premium -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">Hot Deal</div>
+                        <h3>Spotify Premium — 3 months</h3>
+                        <p>Ad-free music, offline listening, highest audio quality</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€7.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€12.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('Spotify Premium', 700)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 5. Adobe Express Premium -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">-40% SALE</div>
+                        <h3>Adobe Express Premium — 12 months</h3>
+                        <p>Premium templates, fonts, AI features & stock assets</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€10.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€17.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('Adobe Express Premium', 1000)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 6. CapCut Pro -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">Discount</div>
+                        <h3>CapCut Pro — 1 month</h3>
+                        <p>Advanced video editing effects, animations & pro tools</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€10.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€15.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('CapCut Pro', 1000)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 7. Canva Pro -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">-45% SALE</div>
+                        <h3>Canva Pro — 12 months</h3>
+                        <p>Background remover, 100M+ premium stock photos & brand kit</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€15.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€28.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('Canva Pro', 1500)">Get Subscription</button>
+                        </div>
+                    </div>
+
+                    <!-- 8. Coursera Premium -->
+                    <div class="product-card">
+                        <div class="product-tag" style="background: #ef4444;">Mega Sale</div>
+                        <h3>Coursera Premium — 12 months</h3>
+                        <p>Unlimited access to professional certificates and courses</p>
+                        <div class="product-price">
+                            <div>
+                                <span class="price-val" style="color: #22c55e; font-size: 18px;">€20.00</span>
+                                <span class="old-price" style="text-decoration: line-through; color: #64748b; font-size: 13px; margin-left: 6px;">€40.00</span>
+                            </div>
+                            <button class="buy-btn" onclick="buySubscription('Coursera Premium', 2000)">Get Subscription</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: Профиль (Данные из Telegram) -->
+            <div id="tab-profile" class="tab-content">
+                <h2 data-i18n="profile_title">Profile</h2>
+                <div class="profile-card" style="background: #181b24; padding: 16px; border-radius: 12px; margin-top: 12px; border: 1px solid #262b38; display: flex; align-items: center; gap: 14px;">
+                    <div id="user-avatar" style="width: 50px; height: 50px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white;">U</div>
+                    <div>
+                        <h3 id="user-name" style="font-size: 16px; margin-bottom: 2px;">Loading...</h3>
+                        <p id="user-handle" style="font-size: 12px; color: #94a3b8;">@username</p>
+                        <p id="user-id" style="font-size: 11px; color: #64748b; margin-top: 4px;">ID: ...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: Заказы -->
+            <div id="tab-orders" class="tab-content">
+                <h2 data-i18n="orders_title">My Orders</h2>
+                <p class="empty-text" data-i18n="no_orders" style="color: #94a3b8; margin-top: 10px;">No active orders yet.</p>
+            </div>
+
+            <!-- Вкладка: Помощь, FAQ и отзывы -->
+            <div id="tab-help" class="tab-content">
+                <h2 data-i18n="help_title">Help & FAQ</h2>
+                <div class="faq-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="background: #181b24; padding: 12px; border-radius: 10px; border: 1px solid #262b38;">
+                        <strong data-i18n="faq_q1">How do I receive my subscription?</strong>
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;" data-i18n="faq_a1">After payment, your order goes to processing. Once ready, you will receive an activation link directly in our bot.</p>
+                    </div>
+                    <div style="background: #181b24; padding: 12px; border-radius: 10px; border: 1px solid #262b38;">
+                        <strong data-i18n="faq_q2">Is payment secure?</strong>
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;" data-i18n="faq_a2">Yes! All payments are processed securely via Stripe in Euros (€).</p>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 24px;" data-i18n="reviews_title">Customer Reviews</h2>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;" data-i18n="reviews_desc">Have you made a purchase? Leave your feedback in our support chat or bot!</p>
+                
+                <div id="reviews-container" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="background: #181b24; padding: 12px; border-radius: 10px; border: 1px solid #262b38; font-size: 13px; color: #94a3b8; text-align: center;">
+                        No reviews yet. Be the first to write one!
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <a href="https://t.me/VeslyStoreSupport" target="_blank" style="display: block; text-align: center; background: #2563eb; color: white; padding: 10px; border-radius: 10px; text-decoration: none; font-weight: 600;" data-i18n="support_btn">Contact Support & Write Review</a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Нижняя навигация -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('store')" data-i18n="nav_store">Store</button>
+            <button class="nav-item" onclick="switchTab('profile')" data-i18n="nav_profile">Profile</button>
+            <button class="nav-item" onclick="switchTab('orders')" data-i18n="nav_orders">Orders</button>
+            <button class="nav-item" onclick="switchTab('help')" data-i18n="nav_help">Help</button>
+        </nav>
+    </div>
+
+    <!-- Модальное окно предупреждения для Google AI -->
+    <div id="modal-warning" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: #181b24; border: 1px solid #262b38; padding: 20px; border-radius: 16px; max-width: 400px; width: 100%; text-align: center;">
+            <h3 style="color: #f59e0b; margin-bottom: 10px;" data-i18n="modal_title">⚠️ Important Notice</h3>
+            <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;" data-i18n="modal_text">
+                The activation link for Google AI Pro is strictly valid for <strong>1 hour</strong> from the moment it is generated and sent to you. Please ensure you are ready to activate it immediately upon receipt!
+            </p>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeModal()" style="flex: 1; background: #262b38; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer;" data-i18n="modal_cancel">Cancel</button>
+                <button id="modal-confirm-btn" style="flex: 1; background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold;" data-i18n="modal_proceed">I Understand, Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
