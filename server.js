@@ -58,6 +58,15 @@ function isAdmin(userId) {
 
 let storeOpen = true;
 
+// Безопасная обработка ошибок бота, чтобы сервер никогда не падал (защита от 502)
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled Rejection:', reason);
+});
+
 // ==================== REST API ДЛЯ МИНИ-ПРИЛОЖЕНИЯ ====================
 
 app.get('/api/store-status', (req, res) => {
@@ -245,8 +254,8 @@ bot.action('bot_help', (ctx) => {
         Markup.inlineKeyboard([
             [Markup.button.callback('⬅️ Back to Start', 'bot_back')]
         ])
-    );
-    ctx.answerCbQuery();
+    ).catch(() => {});
+    ctx.answerCbQuery().catch(() => {});
 });
 
 bot.action('bot_orders', (ctx) => {
@@ -259,7 +268,7 @@ bot.action('bot_orders', (ctx) => {
                     [Markup.button.webApp('🛒 Open Vesly Store', process.env.WEBAPP_URL || 'https://vesly-store.onrender.com')],
                     [Markup.button.callback('⬅️ Back to Start', 'bot_back')]
                 ])
-            );
+            ).catch(() => {});
         } else {
             let text = `📦 Your Recent Orders:\n\n`;
             rows.forEach(o => {
@@ -269,9 +278,9 @@ bot.action('bot_orders', (ctx) => {
             });
             ctx.editMessageText(text, Markup.inlineKeyboard([
                 [Markup.button.callback('⬅️ Back to Start', 'bot_back')]
-            ]));
+            ])).catch(() => {});
         }
-        ctx.answerCbQuery();
+        ctx.answerCbQuery().catch(() => {});
     });
 });
 
@@ -283,8 +292,8 @@ bot.action('bot_back', (ctx) => {
             [Markup.button.webApp('🛒 Open Vesly Store', process.env.WEBAPP_URL || 'https://vesly-store.onrender.com')],
             [Markup.button.callback('💬 FAQ & Help', 'bot_help'), Markup.button.callback('📦 My Orders', 'bot_orders')]
         ])
-    );
-    ctx.answerCbQuery();
+    ).catch(() => {});
+    ctx.answerCbQuery().catch(() => {});
 });
 
 // ==================== АДМИН-ПАНЕЛЬ ====================
@@ -314,8 +323,8 @@ bot.action('toggle_shop', (ctx) => {
             [Markup.button.callback('⏳ Pending / Paid Orders', 'view_orders')],
             [Markup.button.callback('💬 Moderate Reviews', 'view_reviews')]
         ])
-    );
-    ctx.answerCbQuery(`Shop is now ${storeOpen ? 'OPEN' : 'CLOSED'}`);
+    ).catch(() => {});
+    ctx.answerCbQuery(`Shop is now ${storeOpen ? 'OPEN' : 'CLOSED'}`).catch(() => {});
 });
 
 bot.action('manage_products', (ctx) => {
@@ -337,29 +346,54 @@ bot.action('manage_products', (ctx) => {
         });
 
         buttons.push([Markup.button.callback('⬅️ Back', 'back_to_admin')]);
-        ctx.editMessageText('📦 Product Stop-list Management:', Markup.inlineKeyboard(buttons));
-        ctx.answerCbQuery();
+        ctx.editMessageText('📦 Product Stop-list Management:', Markup.inlineKeyboard(buttons)).catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
     });
 });
 
+// Надежное переключение статуса товара без падения сервера
 bot.action(/^toggle_prod_(.+)$/, (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
+    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.').catch(() => {});
     const productName = ctx.match[1];
 
     db.get(`SELECT isActive FROM product_status WHERE productName = ?`, [productName], (err, row) => {
         let newState = row ? (row.isActive === 1 ? 0 : 1) : 0;
         
-        if (row) {
-            db.run(`UPDATE product_status SET isActive = ? WHERE productName = ?`, [newState, productName]);
-        } else {
-            db.run(`INSERT INTO product_status (productName, isActive) VALUES (?, ?)`, [productName, 0]);
-        }
+        const updateDb = () => {
+            db.run(`INSERT OR REPLACE INTO product_status (productName, isActive) VALUES (?, ?)`, [productName, newState], (dbErr) => {
+                if (dbErr) {
+                    ctx.answerCbQuery('Database error!').catch(() => {});
+                    return;
+                }
+                ctx.answerCbQuery(`${productName} -> ${newState === 1 ? 'ACTIVE' : 'ON STOP'}`).catch(() => {});
+                
+                // Перерисовываем меню стоп-листа
+                const products = [
+                    'Duolingo Super', 'ChatGPT Plus', 'Adobe Express Premium', 'CapCut Pro',
+                    'Google AI Pro', 'Spotify Premium', 'Canva Pro', 'Coursera Premium'
+                ];
 
-        ctx.answerCbQuery(`${productName} -> ${newState === 1 ? 'ACTIVE' : 'ON STOP'}`);
-        setTimeout(() => {
-            ctx.deleteMessage().catch(() => {});
-            bot.handleUpdate({ ...ctx.update, callback_query: { ...ctx.callbackQuery, data: 'manage_products' } });
-        }, 100);
+                db.all(`SELECT productName, isActive FROM product_status`, [], (err2, rows) => {
+                    const statusMap = {};
+                    if (rows) rows.forEach(r => statusMap[r.productName] = r.isActive);
+
+                    const buttons = products.map(prod => {
+                        const active = statusMap[prod] !== undefined ? statusMap[prod] : 1;
+                        const icon = active === 1 ? '🟢' : '🔴';
+                        return [Markup.button.callback(`${icon} ${prod}`, `toggle_prod_${prod}`)];
+                    });
+
+                    buttons.push([Markup.button.callback('⬅️ Back', 'back_to_admin')]);
+                    ctx.editMessageText('📦 Product Stop-list Management:', Markup.inlineKeyboard(buttons)).catch(() => {});
+                });
+            });
+        };
+
+        if (row) {
+            db.run(`UPDATE product_status SET isActive = ? WHERE productName = ?`, [newState, productName], updateDb);
+        } else {
+            db.run(`INSERT INTO product_status (productName, isActive) VALUES (?, ?)`, [productName, newState], updateDb);
+        }
     });
 });
 
@@ -379,8 +413,8 @@ bot.action('view_orders', (ctx) => {
 
         ctx.editMessageText(text, Markup.inlineKeyboard([
             [Markup.button.callback('⬅️ Back', 'back_to_admin')]
-        ]));
-        ctx.answerCbQuery();
+        ])).catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
     });
 });
 
@@ -403,8 +437,8 @@ bot.action('view_reviews', (ctx) => {
             text += `ID: #${r.id} | ${r.userFullName}\n"${r.text}"\n---\n`;
         });
 
-        ctx.editMessageText(text, Markup.inlineKeyboard(buttons));
-        ctx.answerCbQuery();
+        ctx.editMessageText(text, Markup.inlineKeyboard(buttons)).catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
     });
 });
 
@@ -412,7 +446,7 @@ bot.action(/^approve_review_(\d+)$/, (ctx) => {
     if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
     const reviewId = ctx.match[1];
     db.run(`UPDATE reviews SET status = 'approved' WHERE id = ?`, [reviewId], () => {
-        ctx.answerCbQuery('Review approved!');
+        ctx.answerCbQuery('Review approved!').catch(() => {});
         ctx.deleteMessage().catch(() => {});
     });
 });
@@ -421,7 +455,7 @@ bot.action(/^delete_review_(\d+)$/, (ctx) => {
     if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
     const reviewId = ctx.match[1];
     db.run(`DELETE FROM reviews WHERE id = ?`, [reviewId], () => {
-        ctx.answerCbQuery('Review deleted.');
+        ctx.answerCbQuery('Review deleted.').catch(() => {});
         ctx.deleteMessage().catch(() => {});
     });
 });
@@ -436,8 +470,8 @@ bot.action('back_to_admin', (ctx) => {
             [Markup.button.callback('⏳ Pending / Paid Orders', 'view_orders')],
             [Markup.button.callback('💬 Moderate Reviews', 'view_reviews')]
         ])
-    );
-    ctx.answerCbQuery();
+    ).catch(() => {});
+    ctx.answerCbQuery().catch(() => {});
 });
 
 bot.command('fulfill', (ctx) => {
