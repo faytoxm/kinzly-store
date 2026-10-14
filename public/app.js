@@ -189,6 +189,7 @@ async function fetchStoreStatus() {
 }
 
 function renderProducts() {
+    // Render product cards with icons and duration (Updated)
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = '';
 
