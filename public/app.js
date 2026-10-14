@@ -202,7 +202,8 @@ function renderProducts() {
                     <img src="${p.icon}" alt="${p.name}" style="width: 24px; height: 24px; object-fit: contain;" />
                 </div>
                 <div class="product-info">
-                    <h3>${p.name} <span style="font-size: 12px; color: var(--accent-color); font-weight: 500;">(${p.duration})</span></h3>
+                    <h3 style="margin-bottom: 2px;">${p.name}</h3>
+                    <div style="font-size: 11px; color: var(--accent-color); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">⏳ ${p.duration}</div>
                     <p class="product-desc">${p.desc}</p>
                     <div class="price-box">
                         <span class="old-price">€${(p.oldPrice / 100).toFixed(2)}</span>
