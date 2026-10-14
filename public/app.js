@@ -75,14 +75,14 @@ const translations = {
 
 // Твои правильные актуальные цены
 const products = [
-    { name: 'Google AI Pro', desc: 'Advanced AI features & storage', price: 999, oldPrice: 1999, discount: '-50%' },
-    { name: 'ChatGPT Plus', desc: 'GPT-4o & priority access', price: 1499, oldPrice: 2499, discount: '-40%' },
-    { name: 'Duolingo Super', desc: 'Ad-free language learning', price: 999, oldPrice: 1999, discount: '-50%' },
-    { name: 'Spotify Premium', desc: 'Music without limits', price: 699, oldPrice: 999, discount: '-30%' },
-    { name: 'Adobe Express Premium', desc: 'Pro design templates', price: 999, oldPrice: 1999, discount: '-50%' },
-    { name: 'CapCut Pro', desc: 'Advanced video editing features', price: 999, oldPrice: 1999, discount: '-50%' },
-    { name: 'Canva Pro', desc: 'Unlimited graphic design tools', price: 1499, oldPrice: 2399, discount: '-40%' },
-    { name: 'Coursera Premium', desc: 'Access to professional certificates', price: 1999, oldPrice: 2999, discount: '-33%' }
+    { name: 'Google AI Pro', desc: '18 months • Advanced AI features & storage', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'ChatGPT Plus', desc: '1 month • GPT-4o & priority access', price: 1499, oldPrice: 2499, discount: '-40%' },
+    { name: 'Duolingo Super', desc: '12 months • Ad-free language learning', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'Spotify Premium', desc: '3 months • Music without limits', price: 699, oldPrice: 999, discount: '-30%' },
+    { name: 'Adobe Express Premium', desc: '12 months • Pro design templates', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'CapCut Pro', desc: '1 month • Advanced video editing features', price: 999, oldPrice: 1999, discount: '-50%' },
+    { name: 'Canva Pro', desc: '12 months • Unlimited graphic design tools', price: 1499, oldPrice: 2399, discount: '-40%' },
+    { name: 'Coursera Premium', desc: '12 months • Access to professional certificates', price: 1999, oldPrice: 2999, discount: '-33%' }
 ];
 
 function switchTab(tabId) {

@@ -37,6 +37,13 @@ db.serialize(() => {
     )`);
 });
 
+// Автоматическое удаление зависших pending-заказов старше 20 минут
+setInterval(() => {
+    db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
+        if (err) console.error('Error cleaning old pending orders:', err.message);
+    });
+}, 60 * 1000);
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
@@ -97,7 +104,6 @@ app.get('/api/orders/:userId', (req, res) => {
     });
 });
 
-// Создание нового заказа и сессии оплаты
 app.post('/api/create-checkout-session', express.json(), async (req, res) => {
     try {
         if (!storeOpen) {
@@ -144,7 +150,6 @@ app.post('/api/create-checkout-session', express.json(), async (req, res) => {
     }
 });
 
-// Повторная оплата существующего pending заказа (без дублирования в базе)
 app.post('/api/retry-checkout', express.json(), async (req, res) => {
     try {
         if (!storeOpen) return res.status(400).json({ error: 'Store closed' });
@@ -317,8 +322,8 @@ bot.action('manage_products', (ctx) => {
     if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
 
     const products = [
-        'Google AI Pro', 'ChatGPT Plus', 'Duolingo Super', 'Spotify Premium',
-        'Adobe Express Premium', 'CapCut Pro', 'Canva Pro', 'Coursera Premium'
+        'Duolingo Super', 'ChatGPT Plus', 'Adobe Express Premium', 'CapCut Pro',
+        'Google AI Pro', 'Spotify Premium', 'Canva Pro', 'Coursera Premium'
     ];
 
     db.all(`SELECT productName, isActive FROM product_status`, [], (err, rows) => {
@@ -456,7 +461,6 @@ bot.command('fulfill', (ctx) => {
     });
 });
 
-// Запуск бота
 try {
     bot.launch();
     console.log('Vesly Store bot launched successfully.');
