@@ -37,7 +37,26 @@ db.serialize(() => {
     )`);
 });
 
-// 1. Установка кнопки мини-приложения слева от поля ввода
+setInterval(() => {
+    db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
+        if (err) console.error('Error cleaning old pending orders:', err.message);
+    });
+}, 60 * 1000);
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const app = express();
+
+const ADMIN_IDS = process.env.ADMIN_IDS 
+    ? process.env.ADMIN_IDS.split(',').map(id => Number(id.trim())) 
+    : [];
+
+function isAdmin(userId) {
+    return ADMIN_IDS.includes(Number(userId));
+}
+
+let storeOpen = true;
+
 bot.setChatMenuButton({
     menu_button: {
         type: 'web_app',
@@ -60,26 +79,6 @@ bot.setMyCommands([
 bot.setMyCommands([
     { command: 'start', description: '🏠 Главное меню и магазин' },
 ], { language_code: 'ru' });
-// Автоматическое удаление зависших pending-заказов старше 20 минут
-setInterval(() => {
-    db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
-        if (err) console.error('Error cleaning old pending orders:', err.message);
-    });
-}, 60 * 1000);
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const bot = new Telegraf(process.env.BOT_TOKEN);
-const app = express();
-
-const ADMIN_IDS = process.env.ADMIN_IDS 
-    ? process.env.ADMIN_IDS.split(',').map(id => Number(id.trim())) 
-    : [];
-
-function isAdmin(userId) {
-    return ADMIN_IDS.includes(Number(userId));
-}
-
-let storeOpen = true;
 
 // Безопасная обработка ошибок бота, чтобы сервер никогда не падал (защита от 502)
 process.on('uncaughtException', (err) => {
