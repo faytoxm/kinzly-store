@@ -88,7 +88,7 @@ const products = [
         duration: '1 month', 
         desc: 'GPT-4o access, faster response times, and advanced data analysis features.', 
         price: 1500, oldPrice: 2500, discount: '-40%',
-        icon: 'https://api.iconify.design/logos:openai-icon.svg',
+        icon: 'icons/ChatGPT.svg',
         features: ['1 Month Full Access', 'GPT-4o & Advanced Voice', 'Priority Access During Peak Hours']
     },
     { 
@@ -112,7 +112,7 @@ const products = [
         duration: '12 months', 
         desc: 'Pro design templates, fonts, and quick content creation tools.', 
         price: 1000, oldPrice: 2000, discount: '-50%',
-        icon: 'https://api.iconify.design/logos:adobe.svg',
+        icon: 'icons/adobe-express-icon.svg',
         features: ['12 Months Premium Plan', 'Access to Premium Templates & Fonts', 'Generative AI Credits Included']
     },
     { 
@@ -120,7 +120,7 @@ const products = [
         duration: '1 month', 
         desc: 'Advanced video editing features, effects, and stock assets.', 
         price: 1000, oldPrice: 1800, discount: '-44%',
-        icon: 'icons/capcut-3.svg',
+        icon: 'icons/Capcut-icon.svg',
         features: ['1 Month Pro Features', 'Unlocks All Pro Effects & Transitions', 'No Watermark & Cloud Storage']
     },
     { 
@@ -128,7 +128,7 @@ const products = [
         duration: '12 months', 
         desc: 'Unlimited graphic design tools, stock photos, and brand kits.', 
         price: 1500, oldPrice: 3000, discount: '-50%',
-        icon: 'icons/canva-wordmark-2.svg',
+        icon: 'icons/canva-seeklogo.svg',
         features: ['12 Months Pro Subscription', '100M+ Premium Stock Photos & Videos', 'Background Remover & Brand Kit']
     },
     { 
@@ -136,7 +136,7 @@ const products = [
         duration: '12 months', 
         desc: 'Access to professional certificates and top university courses.', 
         price: 2000, oldPrice: 4000, discount: '-50%',
-        icon: 'coursera-2.svg',
+        icon: 'icons/Coursera.svg',
         features: ['12 Months Unlimited Learning', 'Official Certificates Upon Completion', 'Top Global Universities & Partners']
     }
 ];
