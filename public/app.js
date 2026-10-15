@@ -96,7 +96,7 @@ const products = [
         duration: '12 months', 
         desc: 'Ad-free language learning with unlimited hearts and personalized practice.', 
         price: 1000, oldPrice: 2000, discount: '-50%',
-        icon: 'https://api.iconify.design/simple-icons:duolingo.svg',
+        icon: 'icons/duolingo-1.svg',
         features: ['12 Months Official Access', 'No Ads & Unlimited Hearts', 'Personalized Practice & Mistakes Review']
     },
     { 
@@ -120,7 +120,7 @@ const products = [
         duration: '1 month', 
         desc: 'Advanced video editing features, effects, and stock assets.', 
         price: 1000, oldPrice: 1800, discount: '-44%',
-        icon: 'https://api.iconify.design/logos:capcut.svg',
+        icon: 'icons/capcut-3.svg',
         features: ['1 Month Pro Features', 'Unlocks All Pro Effects & Transitions', 'No Watermark & Cloud Storage']
     },
     { 
@@ -128,7 +128,7 @@ const products = [
         duration: '12 months', 
         desc: 'Unlimited graphic design tools, stock photos, and brand kits.', 
         price: 1500, oldPrice: 3000, discount: '-50%',
-        icon: 'https://api.iconify.design/logos:canva.svg',
+        icon: 'icons/canva-wordmark-2.svg',
         features: ['12 Months Pro Subscription', '100M+ Premium Stock Photos & Videos', 'Background Remover & Brand Kit']
     },
     { 
@@ -136,7 +136,7 @@ const products = [
         duration: '12 months', 
         desc: 'Access to professional certificates and top university courses.', 
         price: 2000, oldPrice: 4000, discount: '-50%',
-        icon: 'https://api.iconify.design/simple-icons:coursera.svg',
+        icon: 'coursera-2.svg',
         features: ['12 Months Unlimited Learning', 'Official Certificates Upon Completion', 'Top Global Universities & Partners']
     }
 ];
