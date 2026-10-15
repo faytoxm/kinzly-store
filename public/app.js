@@ -80,7 +80,7 @@ const products = [
         duration: '18 months', 
         desc: 'Advanced AI features and cloud storage integration.', 
         price: 1000, oldPrice: 2500, discount: '-60%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/google.svg',
+        icon: 'https://api.iconify.design/logos:google-icon.svg',
         features: ['18 Months Extended Access', 'Gemini Advanced Integration', 'Priority Processing & Large Storage']
     },
     { 
@@ -88,7 +88,7 @@ const products = [
         duration: '1 month', 
         desc: 'GPT-4o access, faster response times, and advanced data analysis features.', 
         price: 1500, oldPrice: 2500, discount: '-40%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/openai.svg',
+        icon: 'https://api.iconify.design/logos:openai-icon.svg',
         features: ['1 Month Full Access', 'GPT-4o & Advanced Voice', 'Priority Access During Peak Hours']
     },
     { 
@@ -96,7 +96,7 @@ const products = [
         duration: '12 months', 
         desc: 'Ad-free language learning with unlimited hearts and personalized practice.', 
         price: 1000, oldPrice: 2000, discount: '-50%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/duolingo.svg',
+        icon: 'https://api.iconify.design/logos:duolingo.svg',
         features: ['12 Months Official Access', 'No Ads & Unlimited Hearts', 'Personalized Practice & Mistakes Review']
     },
     { 
@@ -104,7 +104,7 @@ const products = [
         duration: '3 months', 
         desc: 'Music without limits, offline downloads, and high audio quality.', 
         price: 700, oldPrice: 1400, discount: '-50%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/spotify.svg',
+        icon: 'https://api.iconify.design/logos:spotify-icon.svg',
         features: ['3 Months Individual Plan', 'Ad-free Music & Unlimited Skips', 'Offline Downloads & High Quality Audio']
     },
     { 
@@ -112,7 +112,7 @@ const products = [
         duration: '12 months', 
         desc: 'Pro design templates, fonts, and quick content creation tools.', 
         price: 1000, oldPrice: 2000, discount: '-50%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/adobe.svg',
+        icon: 'https://api.iconify.design/logos:adobe.svg',
         features: ['12 Months Premium Plan', 'Access to Premium Templates & Fonts', 'Generative AI Credits Included']
     },
     { 
@@ -120,7 +120,7 @@ const products = [
         duration: '1 month', 
         desc: 'Advanced video editing features, effects, and stock assets.', 
         price: 1000, oldPrice: 1800, discount: '-44%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/capcut.svg',
+        icon: 'https://api.iconify.design/logos:capcut-icon.svg',
         features: ['1 Month Pro Features', 'Unlocks All Pro Effects & Transitions', 'No Watermark & Cloud Storage']
     },
     { 
@@ -128,7 +128,7 @@ const products = [
         duration: '12 months', 
         desc: 'Unlimited graphic design tools, stock photos, and brand kits.', 
         price: 1500, oldPrice: 3000, discount: '-50%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/canva.svg',
+        icon: 'https://api.iconify.design/logos:canva.svg',
         features: ['12 Months Pro Subscription', '100M+ Premium Stock Photos & Videos', 'Background Remover & Brand Kit']
     },
     { 
@@ -136,7 +136,7 @@ const products = [
         duration: '12 months', 
         desc: 'Access to professional certificates and top university courses.', 
         price: 2000, oldPrice: 4000, discount: '-50%',
-        icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/coursera.svg',
+        icon: 'https://api.iconify.design/logos:coursera-icon.svg',
         features: ['12 Months Unlimited Learning', 'Official Certificates Upon Completion', 'Top Global Universities & Partners']
     }
 ];
@@ -189,7 +189,6 @@ async function fetchStoreStatus() {
 }
 
 function renderProducts() {
-    // Render product cards with icons and duration (Updated)
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = '';
 
