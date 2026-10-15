@@ -393,4 +393,58 @@ async function submitReview() {
     }
 }
 
+function openProductModal(productName) {
+    const product = products.find(p => p.name === productName);
+    if (!product) return;
+
+    const modalBody = document.getElementById('modalBody');
+    
+    let featuresHtml = '';
+    if (product.features && product.features.length > 0) {
+        featuresHtml = `
+            <div style="margin: 16px 0;">
+                <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--accent-color);">Что входит в подписку:</h4>
+                <ul style="padding-left: 18px; font-size: 13px; color: #d0d0d8; line-height: 1.6;">
+                    ${product.features.map(f => `<li>${f}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    modalBody.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <img src="${product.icon}" alt="${product.name}" style="width: 36px; height: 36px; object-fit: contain;" />
+            <div>
+                <h3 style="font-size: 18px; margin: 0;">${product.name}</h3>
+                <span style="font-size: 11px; color: var(--accent-color); font-weight: 600; text-transform: uppercase;">⏳ ${product.duration}</span>
+            </div>
+        </div>
+        <p style="font-size: 13px; color: #a0a0ab; line-height: 1.4; margin-bottom: 12px;">${product.desc}</p>
+        ${featuresHtml}
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div>
+                <span class="old-price" style="font-size: 12px; text-decoration: line-through; color: #888; margin-right: 6px;">€${(product.oldPrice / 100).toFixed(2)}</span>
+                <span class="current-price" style="font-size: 18px; font-weight: bold; color: #fff;">€${(product.price / 100).toFixed(2)}</span>
+            </div>
+            <button class="buy-btn" onclick="handleBuy('${product.name}', ${product.price}); closeProductModal();">
+                Купить
+            </button>
+        </div>
+    `;
+
+    document.getElementById('productModal').style.display = 'flex';
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+}
+
+// Закрытие по клику вне модального окна
+window.onclick = function(event) {
+    const modal = document.getElementById('productModal');
+    if (event.target === modal) {
+        closeProductModal();
+    }
+}
+
 fetchStoreStatus();

@@ -37,6 +37,29 @@ db.serialize(() => {
     )`);
 });
 
+// 1. Установка кнопки мини-приложения слева от поля ввода
+bot.setChatMenuButton({
+    menu_button: {
+        type: 'web_app',
+        text: '🛒 Open Vesly Store', // Текст на кнопке в поле ввода
+        url: 'https://veslystore.onrender.com' // Твоя ссылка из Render
+    }
+}).then(() => {
+    console.log('Кнопка меню успешно установлена!');
+}).catch(err => {
+    console.error('Ошибка установки кнопки меню:', err);
+});
+
+// 2. Установка выпадающего списка команд (рядом с кнопкой / по значку слэша)
+// Для англоязычных пользователей
+bot.setMyCommands([
+    { command: 'start', description: '🏠 Main Menu & Store' },
+], { language_code: 'en' });
+
+// Для русскоязычных (по умолчанию)
+bot.setMyCommands([
+    { command: 'start', description: '🏠 Главное меню и магазин' },
+], { language_code: 'ru' });
 // Автоматическое удаление зависших pending-заказов старше 20 минут
 setInterval(() => {
     db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
