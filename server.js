@@ -58,17 +58,11 @@ function isAdmin(userId) {
 let storeOpen = true;
 
 bot.setChatMenuButton({
-    menu_button: {
-        type: 'web_app',
-        text: '🛒 Open Vesly Store', // Текст на кнопке в поле ввода
-        url: 'https://veslystore.onrender.com' // Твоя ссылка из Render
+    text: '🛒 Open Vesly Store',
+    web_app: {
+        url: 'https://vesly-store.onrender.com'
     }
-}).then(() => {
-    console.log('Кнопка меню успешно установлена!');
-}).catch(err => {
-    console.error('Ошибка установки кнопки меню:', err);
-});
-
+}).catch(err => console.log('Menu button info:', err.message));
 // 2. Установка выпадающего списка команд (рядом с кнопкой / по значку слэша)
 // Для англоязычных пользователей
 bot.setMyCommands([
