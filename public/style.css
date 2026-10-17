@@ -145,13 +145,20 @@ body {
     color: var(--text-main);
 }
 
+/* Статус "в наличии" / NEW — всегда ярко-зеленые */
 .status-badge {
     font-size: 11px;
-    color: var(--text-main);
-    background: rgba(255, 255, 255, 0.06);
-    padding: 3px 8px;
+    color: #4ade80 !important;
+    background: rgba(74, 222, 128, 0.12);
+    padding: 4px 8px;
     border-radius: 6px;
-    font-weight: 500;
+    font-weight: 600;
+}
+
+/* Статус "под заказ" — желтоватый */
+.status-badge.warning-status {
+    color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.12) !important;
 }
 
 /* Нижняя навигация */
