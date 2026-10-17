@@ -58,15 +58,6 @@ function isAdmin(userId) {
 let storeOpen = true;
 //Установка выпадающего списка команд (рядом с кнопкой / по значку слэша)
 // Для англоязычных пользователей
-bot.setMyCommands([
-    { command: 'start', description: '🏠 Main Menu & Store' },
-], { language_code: 'en' });
-
-// Для русскоязычных (по умолчанию)
-bot.setMyCommands([
-    { command: 'start', description: '🏠 Главное меню и магазин' },
-], { language_code: 'ru' });
-
 // Безопасная обработка ошибок бота, чтобы сервер никогда не падал (защита от 502)
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err.message);
@@ -513,3 +504,39 @@ try {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+
+const fs = require('fs');
+const path = require('path');
+
+const REVIEWS_FILE = path.join(__dirname, 'reviews.json');
+
+function getReviews() {
+    if (!fs.existsSync(REVIEWS_FILE)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf8'));
+    } catch (e) {
+        return [];
+    }
+}
+
+app.get('/api/reviews', (req, res) => {
+    res.json(getReviews());
+});
+
+app.post('/api/reviews', (req, res) => {
+    const { username, service, text, rating } = req.body;
+    if (!text) return res.status(400).json({ error: 'Text required' });
+
+    const reviews = getReviews();
+    const newReview = {
+        user: username || 'Аноним',
+        service: service || 'Подписка',
+        date: new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+        text,
+        rating: Number(rating) || 5
+    };
+
+    reviews.unshift(newReview);
+    fs.writeFileSync(REVIEWS_FILE, JSON.stringify(reviews, null, 2));
+    res.json({ success: true, review: newReview });
+});
