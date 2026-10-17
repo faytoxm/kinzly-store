@@ -1,7 +1,6 @@
 let currentTab = 'catalog';
 let reviewsData = [];
 
-// Список товаров Kinzly Store
 const products = [
     { 
         id: 'google',
@@ -15,7 +14,8 @@ const products = [
         badge: 'ХИТ',
         status: 'под заказ · до 60 мин',
         icon: 'icons/google.svg',
-        features: ['18 месяцев доступа', 'Gemini Advanced', 'Приоритетная обработка']
+        features: ['18 месяцев доступа', 'Gemini Advanced', 'Приоритетная обработка'],
+        isGoogle: true // Флаг для предупреждения
     },
     { 
         id: 'chatgpt',
@@ -166,7 +166,6 @@ function renderCatalog() {
     });
 }
 
-// Плавное открытие страницы товара
 function openProductModal(productId) {
     const p = products.find(item => item.id === productId);
     if (!p) return;
@@ -199,8 +198,8 @@ function openProductModal(productId) {
             </div>
         </div>
 
-        <button class="stripe-pay-btn" onclick="payWithStripe('${p.name}', ${p.price})">
-            💳 Оплатить через Stripe (${p.price.toLocaleString()} ₸)
+        <button class="stripe-pay-btn" onclick="initCheckout('${p.id}', '${p.name}', ${p.price})">
+            💳 Оплатить (${p.price.toLocaleString()} ₸)
         </button>
     `;
 
@@ -209,7 +208,6 @@ function openProductModal(productId) {
     setTimeout(() => overlay.classList.add('active'), 10);
 }
 
-// Плавное закрытие страницы товара
 function closeProductModal() {
     const overlay = document.getElementById('productModal');
     overlay.classList.remove('active');
@@ -220,6 +218,14 @@ function closeProductModal() {
 
 function toggleFaq(element) {
     element.classList.toggle('active');
+}
+
+function initCheckout(productId, productName, price) {
+    if (productId === 'google') {
+        const confirmed = confirm('⚠️ Внимание!\n\nСсылка-приглашение для Google AI Pro действует строго 1 час после получения. Убедитесь, что сможете активировать её сразу после оплаты.\n\nПродолжить?');
+        if (!confirmed) return;
+    }
+    payWithStripe(productName, price);
 }
 
 function payWithStripe(productName, price) {
@@ -256,16 +262,29 @@ function loadOrders() {
                 return;
             }
 
-            ordersList.innerHTML = orders.map(o => `
-                <div style="background: var(--card-bg); padding: 14px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--card-border); box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <strong style="color: var(--text-main);">${o.productName}</strong>
-                        <span style="color: ${o.status === 'paid' ? 'var(--accent-color)' : 'var(--text-muted)'}; font-weight: bold; font-size: 12px;">${o.status.toUpperCase()}</span>
+            ordersList.innerHTML = orders.map(o => {
+                let statusText = 'Ожидает оплаты';
+                let statusColor = '#fbbf24'; // желтый для pending
+                if (o.status === 'paid') {
+                    statusText = 'Оплачено';
+                    statusColor = 'var(--accent-color)';
+                } else if (o.status === 'completed') {
+                    statusText = 'Выполнено';
+                    statusColor = '#4ade80';
+                }
+
+                return `
+                    <div style="background: var(--card-bg); padding: 14px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--card-border); box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <strong style="color: var(--text-main);">${o.productName}</strong>
+                            <span style="color: ${statusColor}; font-weight: bold; font-size: 12px;">${statusText}</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">Сумма: ${o.amount.toLocaleString()} ₸</div>
+                        ${o.status === 'pending' ? `<button onclick="payWithStripe('${o.productName}',${o.amount})" style="margin-top: 10px; width: 100%; padding: 8px; background: var(--accent-color); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">💳 Оплатить заказ</button>` : ''}
+                        ${o.link ? `<div style="margin-top: 8px;"><a href="${o.link}" target="_blank" style="color: var(--accent-color); font-weight: bold; text-decoration: none;">🔗 Получить доступ</a></div>` : ''}
                     </div>
-                    <div style="font-size: 13px; color: var(--text-muted);">Сумма: ${o.amount.toLocaleString()} ₸</div>
-                    ${o.link ? `<div style="margin-top: 8px;"><a href="${o.link}" target="_blank" style="color: var(--accent-color); font-weight: bold; text-decoration: none;">🔗 Получить доступ</a></div>` : ''}
-                </div>
-            `).join('');
+                `;
+            }).join('');
         })
         .catch(() => {
             ordersList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 30px 0;">Не удалось загрузить заказы</p>`;
@@ -360,7 +379,6 @@ function closeReviewsModal() {
     document.getElementById('reviewsModal').style.display = 'none';
 }
 
-// Заполнение профиля данными Telegram с поддержкой фото аватарки
 window.onload = () => {
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (user) {
@@ -372,7 +390,6 @@ window.onload = () => {
         if (nameEl) nameEl.innerText = fullName;
         if (usernameEl) usernameEl.innerText = user.username ? `@${user.username}` : `ID: ${user.id}`;
 
-        // Отображение аватарки (если у пользователя есть фото в Telegram)
         if (user.photo_url && avatarEl) {
             avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
         } else if (avatarEl) {
