@@ -166,6 +166,7 @@ function renderCatalog() {
     });
 }
 
+// Плавное открытие страницы товара
 function openProductModal(productId) {
     const p = products.find(item => item.id === productId);
     if (!p) return;
@@ -203,11 +204,18 @@ function openProductModal(productId) {
         </button>
     `;
 
-    document.getElementById('productModal').style.display = 'block';
+    const overlay = document.getElementById('productModal');
+    overlay.style.display = 'block';
+    setTimeout(() => overlay.classList.add('active'), 10);
 }
 
+// Плавное закрытие страницы товара
 function closeProductModal() {
-    document.getElementById('productModal').style.display = 'none';
+    const overlay = document.getElementById('productModal');
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 200);
 }
 
 function toggleFaq(element) {
@@ -352,7 +360,7 @@ function closeReviewsModal() {
     document.getElementById('reviewsModal').style.display = 'none';
 }
 
-// Заполнение профиля данными Telegram
+// Заполнение профиля данными Telegram с поддержкой фото аватарки
 window.onload = () => {
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (user) {
@@ -363,12 +371,20 @@ window.onload = () => {
         const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Пользователь';
         if (nameEl) nameEl.innerText = fullName;
         if (usernameEl) usernameEl.innerText = user.username ? `@${user.username}` : `ID: ${user.id}`;
-        if (avatarEl) avatarEl.innerText = fullName.charAt(0).toUpperCase();
+
+        // Отображение аватарки (если у пользователя есть фото в Telegram)
+        if (user.photo_url && avatarEl) {
+            avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        } else if (avatarEl) {
+            avatarEl.innerText = fullName.charAt(0).toUpperCase();
+        }
     } else {
         const nameEl = document.getElementById('profileNameView');
         const usernameEl = document.getElementById('profileUsernameView');
+        const avatarEl = document.getElementById('profileAvatar');
         if (nameEl) nameEl.innerText = 'Гость';
         if (usernameEl) usernameEl.innerText = '@web_guest';
+        if (avatarEl) avatarEl.innerText = 'G';
     }
 
     renderCatalog();

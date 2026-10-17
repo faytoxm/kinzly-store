@@ -425,3 +425,57 @@ body {
 .stripe-pay-btn:hover {
     background: var(--accent-hover);
 }
+
+/* Плавное появление контента при переключении вкладок */
+.tab-content {
+    animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Плавное открытие полноэкранной страницы товара */
+.product-page-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-color);
+    z-index: 2000;
+    overflow-y: auto;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Класс для плавного показа страницы товара через JS */
+.product-page-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Плавность для кнопок навигации и карточек */
+.nav-item {
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.nav-item:active {
+    transform: scale(0.95);
+}
+
+.product-card-modern {
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card-modern:active {
+    transform: scale(0.98);
+}
