@@ -15,7 +15,7 @@ const products = [
         status: 'под заказ · до 60 мин',
         icon: 'icons/google.svg',
         features: ['18 месяцев доступа', 'Gemini Advanced', 'Приоритетная обработка'],
-        isGoogle: true // Флаг для предупреждения
+        isGoogle: true
     },
     { 
         id: 'chatgpt',
@@ -173,6 +173,18 @@ function openProductModal(productId) {
     const modalDetails = document.getElementById('modalProductDetails');
     let featuresHtml = p.features.map(f => `<li>${f}</li>`).join('');
 
+    let googleWarningHtml = '';
+    if (p.isGoogle) {
+        googleWarningHtml = `
+            <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--text-main);">
+                    <input type="checkbox" id="googleConfirmCheck" style="margin-top: 2px; accent-color: var(--accent-color);" onchange="toggleGoogleBtn()">
+                    <span>⚠️ <b>Внимание:</b> Ссылка-приглашение для Google AI Pro действует строго <b>1 час</b> после получения. Я подтверждаю, что готов активировать её сразу.</span>
+                </label>
+            </div>
+        `;
+    }
+
     modalDetails.innerHTML = `
         <div class="modal-product-header">
             <img src="${p.icon}" class="modal-icon" />
@@ -198,7 +210,9 @@ function openProductModal(productId) {
             </div>
         </div>
 
-        <button class="stripe-pay-btn" onclick="initCheckout('${p.id}', '${p.name}', ${p.price})">
+        ${googleWarningHtml}
+
+        <button id="payMainBtn" class="stripe-pay-btn" ${p.isGoogle ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} onclick="payWithStripe('${p.name}', ${p.price})">
             💳 Оплатить (${p.price.toLocaleString()} ₸)
         </button>
     `;
@@ -206,6 +220,22 @@ function openProductModal(productId) {
     const overlay = document.getElementById('productModal');
     overlay.style.display = 'block';
     setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+function toggleGoogleBtn() {
+    const checkbox = document.getElementById('googleConfirmCheck');
+    const btn = document.getElementById('payMainBtn');
+    if (checkbox && btn) {
+        if (checkbox.checked) {
+            btn.removeAttribute('disabled');
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.setAttribute('disabled', 'true');
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+    }
 }
 
 function closeProductModal() {
@@ -220,21 +250,14 @@ function toggleFaq(element) {
     element.classList.toggle('active');
 }
 
-function initCheckout(productId, productName, price) {
-    if (productId === 'google') {
-        const confirmed = confirm('⚠️ Внимание!\n\nСсылка-приглашение для Google AI Pro действует строго 1 час после получения. Убедитесь, что сможете активировать её сразу после оплаты.\n\nПродолжить?');
-        if (!confirmed) return;
-    }
-    payWithStripe(productName, price);
-}
-
-function payWithStripe(productName, price) {
+// Передаем существующий orderId, чтобы не плодить дубликаты
+function payWithStripe(productName, price, existingOrderId = null) {
     const customerTelegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'guest';
 
     fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productName, amount: price, customerTelegramId })
+        body: JSON.stringify({ productName, amount: price, customerTelegramId, existingOrderId })
     })
     .then(res => res.json())
     .then(data => {
@@ -264,7 +287,7 @@ function loadOrders() {
 
             ordersList.innerHTML = orders.map(o => {
                 let statusText = 'Ожидает оплаты';
-                let statusColor = '#fbbf24'; // желтый для pending
+                let statusColor = '#fbbf24';
                 if (o.status === 'paid') {
                     statusText = 'Оплачено';
                     statusColor = 'var(--accent-color)';
@@ -280,7 +303,7 @@ function loadOrders() {
                             <span style="color: ${statusColor}; font-weight: bold; font-size: 12px;">${statusText}</span>
                         </div>
                         <div style="font-size: 13px; color: var(--text-muted);">Сумма: ${o.amount.toLocaleString()} ₸</div>
-                        ${o.status === 'pending' ? `<button onclick="payWithStripe('${o.productName}',${o.amount})" style="margin-top: 10px; width: 100%; padding: 8px; background: var(--accent-color); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">💳 Оплатить заказ</button>` : ''}
+                        ${o.status === 'pending' ? `<button onclick="payWithStripe('${o.productName}', ${o.amount},${o.id})" style="margin-top: 10px; width: 100%; padding: 10px; background: var(--accent-color); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">💳 Оплатить заказ</button>` : ''}
                         ${o.link ? `<div style="margin-top: 8px;"><a href="${o.link}" target="_blank" style="color: var(--accent-color); font-weight: bold; text-decoration: none;">🔗 Получить доступ</a></div>` : ''}
                     </div>
                 `;
