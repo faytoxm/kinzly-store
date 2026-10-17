@@ -39,6 +39,7 @@ db.serialize(() => {
     )`);
 });
 
+// Автоматическая очистка старых неоплаченных заказов старше 20 минут
 setInterval(() => {
     db.run(`DELETE FROM orders WHERE status = 'pending' AND createdAt < DATETIME('now', '-20 minutes')`, (err) => {
         if (err) console.error('Error cleaning old pending orders:', err.message);
@@ -118,41 +119,61 @@ app.post('/api/create-checkout-session', async (req, res) => {
             return res.status(400).json({ error: 'Магазин временно закрыт.' });
         }
 
-        const { productName, amount, customerTelegramId } = req.body;
+        const { productName, amount, customerTelegramId, existingOrderId } = req.body;
 
         db.get(`SELECT isActive FROM product_status WHERE productName = ?`, [productName], async (err, row) => {
             if (row && row.isActive === 0) {
                 return res.status(400).json({ error: 'Этот товар временно распродан.' });
             }
 
-            db.run(
-                `INSERT INTO orders (customerTelegramId, productName, amount, status) VALUES (?, ?, ?, ?)`,
-                [customerTelegramId || 'guest', productName, amount, 'pending'],
-                async function(err) {
-                    if (err) return res.status(500).json({ error: 'Database error' });
-                    const orderId = this.lastID;
+            const proceedWithOrder = (orderId) => {
+                const priceInEurCents = Math.round((amount / 500) * 100);
 
-                    const priceInEurCents = Math.round((amount / 500) * 100);
-
-                    const session = await stripe.checkout.sessions.create({
-                        payment_method_types: ['card'],
-                        line_items: [{
-                            price_data: {
-                                currency: 'eur',
-                                product_data: { name: productName },
-                                unit_amount: priceInEurCents > 50 ? priceInEurCents : 100,
-                            },
-                            quantity: 1,
-                        }],
-                        mode: 'payment',
-                        success_url: `${process.env.WEBAPP_URL || 'http://localhost:3000'}?success=true`,
-                        cancel_url: `${process.env.WEBAPP_URL || 'http://localhost:3000'}?canceled=true`,
-                        metadata: { orderId: String(orderId), customerTelegramId: String(customerTelegramId || 'guest'), productName }
-                    });
-
+                stripe.checkout.sessions.create({
+                    payment_method_types: ['card'],
+                    line_items: [{
+                        price_data: {
+                            currency: 'eur',
+                            product_data: { name: productName },
+                            unit_amount: priceInEurCents > 50 ? priceInEurCents : 100,
+                        },
+                        quantity: 1,
+                    }],
+                    mode: 'payment',
+                    success_url: `${process.env.WEBAPP_URL || 'http://localhost:3000'}?success=true`,
+                    cancel_url: `${process.env.WEBAPP_URL || 'http://localhost:3000'}?canceled=true`,
+                    metadata: { orderId: String(orderId), customerTelegramId: String(customerTelegramId || 'guest'), productName }
+                }).then(session => {
                     res.json({ url: session.url });
-                }
-            );
+                }).catch(err => {
+                    console.error('Stripe error:', err.message);
+                    res.status(500).json({ error: 'Stripe connection error.' });
+                });
+            };
+
+            // Если передан существующий ID заказа из списка "Мои заказы", используем его строго без создания новой строки
+            if (existingOrderId) {
+                db.get(`SELECT id FROM orders WHERE id = ?`, [existingOrderId], (err, orderRow) => {
+                    if (orderRow) {
+                        proceedWithOrder(existingOrderId);
+                    } else {
+                        createNewOrder();
+                    }
+                });
+            } else {
+                createNewOrder();
+            }
+
+            function createNewOrder() {
+                db.run(
+                    `INSERT INTO orders (customerTelegramId, productName, amount, status) VALUES (?, ?, ?, ?)`,
+                    [customerTelegramId || 'guest', productName, amount, 'pending'],
+                    function(err) {
+                        if (err) return res.status(500).json({ error: 'Database error' });
+                        proceedWithOrder(this.lastID);
+                    }
+                );
+            }
         });
     } catch (error) {
         console.error('Stripe error:', error.message);

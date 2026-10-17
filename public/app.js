@@ -250,7 +250,6 @@ function toggleFaq(element) {
     element.classList.toggle('active');
 }
 
-// Передаем существующий orderId, чтобы не плодить дубликаты
 function payWithStripe(productName, price, existingOrderId = null) {
     const customerTelegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'guest';
 
