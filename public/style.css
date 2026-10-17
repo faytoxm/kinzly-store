@@ -1,4 +1,5 @@
 :root {
+    color-scheme: light;
     --bg-color: #f8fafc;
     --card-bg: #ffffff;
     --card-border: #e2e8f0;
@@ -49,31 +50,6 @@ body {
 .profile-info p {
     font-size: 13px;
     color: var(--text-muted);
-}
-
-.profile-stats {
-    display: flex;
-    gap: 10px;
-}
-
-.stat-badge {
-    background: #f1f5f9;
-    border: 1px solid var(--card-border);
-    padding: 6px 10px;
-    border-radius: 10px;
-    text-align: center;
-    cursor: pointer;
-}
-
-.stat-badge span {
-    display: block;
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
-.stat-badge strong {
-    font-size: 13px;
-    color: var(--accent-color);
 }
 
 /* Catalog Grid */
@@ -222,7 +198,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(15, 23, 42, 0.4);
     display: none;
     justify-content: center;
     align-items: flex-end;
@@ -252,6 +228,7 @@ body {
 .modal-icon {
     width: 48px;
     height: 48px;
+    object-fit: contain;
 }
 
 .info-section-box {

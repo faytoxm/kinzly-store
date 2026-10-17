@@ -1,7 +1,6 @@
 let currentTab = 'catalog';
 let reviewsData = [];
 
-// Оригинальные 8 сервисов с ценами в тенге
 const products = [
     { 
         id: 'google',
@@ -158,7 +157,7 @@ function renderCatalog() {
                         <span class="old-price-kz">${p.oldPrice.toLocaleString()} ₸</span>
                         <span class="current-price-kz">${p.price.toLocaleString()} ₸</span>
                     </div>
-                    <span class="status-badge ${p.status.includes('мало') ? 'warning' : ''}">${p.status}</span>
+                    <span class="status-badge">${p.status}</span>
                 </div>
             </div>
         `;
@@ -177,23 +176,25 @@ function openProductModal(productId) {
         <div class="modal-product-header">
             <img src="${p.icon}" class="modal-icon" />
             <div>
-                <h2 style="color: #0f172a; font-size: 18px;">${p.name}</h2>
-                <span class="modal-duration" style="color: #64748b; font-size: 12px;">⏳ ${p.duration} — доступ сразу после проверки</span>
+                <h2 style="color: var(--text-main); font-size: 18px;">${p.name}</h2>
+                <span style="color: var(--text-muted); font-size: 12px;">⏳ ${p.duration} — выдача сразу</span>
             </div>
         </div>
 
         <div class="info-section-box">
-            <h4 style="color: #64748b; font-size: 11px; margin-bottom: 6px;">ОПИСАНИЕ И УСЛОВИЯ</h4>
-            <p style="color: #0f172a; font-size: 13px; margin-bottom: 4px;"><b>Гарантия:</b> ${p.guarantee}</p>
-            <p style="color: #0f172a; font-size: 13px; margin-bottom: 6px;"><b>Выдача:</b> ${p.deliveryType}</p>
-            <p style="color: #64748b; font-size: 13px; line-height: 1.4;">${p.fullDesc}</p>
-            <ul style="padding-left: 16px; margin-top: 8px; font-size: 13px; color: #334155;">${featuresHtml}</ul>
+            <h4>ОПИСАНИЕ И УСЛОВИЯ</h4>
+            <p style="color: var(--text-main); font-size: 13px; margin-bottom: 4px;"><b>Гарантия:</b> ${p.guarantee}</p>
+            <p style="color: var(--text-main); font-size: 13px; margin-bottom: 6px;"><b>Выдача:</b> ${p.deliveryType}</p>
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.4;">${p.fullDesc}</p>
+            <ul style="padding-left: 16px; margin-top: 8px; font-size: 13px; color: var(--text-main);">${featuresHtml}</ul>
         </div>
 
-        <div class="checkout-summary-box" style="background: #f1f5f9; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 16px;">
-            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #64748b; margin-bottom: 6px;"><span>Стоимость</span> <span>${p.oldPrice.toLocaleString()} ₸</span></div>
-            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #4f46e5; margin-bottom: 8px;"><span>Скидка</span> <span>-${(p.oldPrice - p.price).toLocaleString()} ₸</span></div>
-            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #0f172a; border-top: 1px solid #e2e8f0; padding-top: 8px;"><span>К ОПЛАТЕ</span> <span>${p.price.toLocaleString()} ₸</span></div>
+        <div class="info-section-box">
+            <h4>СТОИМОСТЬ</h4>
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span class="old-price-kz">${p.oldPrice.toLocaleString()} ₸</span>
+                <span class="current-price-kz" style="font-size: 18px;">${p.price.toLocaleString()} ₸</span>
+            </div>
         </div>
 
         <button class="stripe-pay-btn" onclick="payWithStripe('${p.name}', ${p.price})">
@@ -238,23 +239,23 @@ function loadOrders() {
         .then(res => res.json())
         .then(orders => {
             if (!orders || orders.length === 0) {
-                ordersList.innerHTML = `<p style="text-align: center; color: #64748b; padding: 30px 0;">У вас пока нет активных заказов</p>`;
+                ordersList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 30px 0;">У вас пока нет активных заказов</p>`;
                 return;
             }
 
             ordersList.innerHTML = orders.map(o => `
-                <div style="background: #ffffff; padding: 14px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="background: var(--card-bg); padding: 14px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--card-border); box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <strong style="color: #0f172a;">${o.productName}</strong>
-                        <span style="color: ${o.status === 'paid' ? '#4f46e5' : '#64748b'}; font-weight: bold; font-size: 12px;">${o.status.toUpperCase()}</span>
+                        <strong style="color: var(--text-main);">${o.productName}</strong>
+                        <span style="color: ${o.status === 'paid' ? 'var(--accent-color)' : 'var(--text-muted)'}; font-weight: bold; font-size: 12px;">${o.status.toUpperCase()}</span>
                     </div>
-                    <div style="font-size: 13px; color: #64748b;">Сумма: ${o.amount.toLocaleString()} ₸</div>
-                    ${o.link ? `<div style="margin-top: 8px;"><a href="${o.link}" target="_blank" style="color: #4f46e5; font-weight: bold; text-decoration: none;">🔗 Получить доступ</a></div>` : ''}
+                    <div style="font-size: 13px; color: var(--text-muted);">Сумма: ${o.amount.toLocaleString()} ₸</div>
+                    ${o.link ? `<div style="margin-top: 8px;"><a href="${o.link}" target="_blank" style="color: var(--accent-color); font-weight: bold; text-decoration: none;">🔗 Получить доступ</a></div>` : ''}
                 </div>
             `).join('');
         })
         .catch(() => {
-            ordersList.innerHTML = `<p style="text-align: center; color: #64748b; padding: 30px 0;">Не удалось загрузить заказы</p>`;
+            ordersList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 30px 0;">Не удалось загрузить заказы</p>`;
         });
 }
 
@@ -272,19 +273,19 @@ function loadReviews() {
 
 function openReviewsModal() {
     const list = document.getElementById('reviewsModalList');
-    let html = `<button class="add-review-btn" onclick="openAddReviewForm()" style="width:100%; padding:12px; background:#4f46e5; color:#fff; border:none; border-radius:10px; font-weight:bold; margin-bottom:14px; cursor:pointer;">✍️ Оставить отзыв</button>`;
+    let html = `<button class="stripe-pay-btn" onclick="openAddReviewForm()" style="margin-top: 0; margin-bottom: 14px;">✍️ Оставить отзыв</button>`;
 
     if (!reviewsData || reviewsData.length === 0) {
-        html += `<p style="text-align: center; color: #64748b; margin-top: 20px;">Пока нет отзывов. Станьте первым!</p>`;
+        html += `<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Пока нет отзывов. Станьте первым!</p>`;
     } else {
         html += reviewsData.map(r => `
-            <div style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+            <div style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--card-border);">
                 <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
-                    <strong style="color: #0f172a;">${r.userFullName || 'Покупатель'}</strong>
-                    <span style="color: #64748b;">${r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</span>
+                    <strong style="color: var(--text-main);">${r.userFullName || 'Покупатель'}</strong>
+                    <span style="color: var(--text-muted);">${r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</span>
                 </div>
-                <div style="font-size: 12px; color: #4f46e5; margin-bottom: 6px;">${r.serviceName || 'Цифровая подписка'}</div>
-                <div style="font-size: 13px; color: #0f172a; margin-bottom: 6px;">"${r.text}"</div>
+                <div style="font-size: 12px; color: var(--accent-color); margin-bottom: 6px;">${r.serviceName || 'Цифровая подписка'}</div>
+                <div style="font-size: 13px; color: var(--text-main); margin-bottom: 6px;">"${r.text}"</div>
                 <div>${'⭐'.repeat(r.rating || 5)}</div>
             </div>
         `).join('');
@@ -296,18 +297,18 @@ function openReviewsModal() {
 function openAddReviewForm() {
     const list = document.getElementById('reviewsModalList');
     list.innerHTML = `
-        <div class="add-review-form">
-            <h3 style="margin-bottom: 10px; color: #0f172a; font-size: 18px;">Оставить отзыв</h3>
-            <label style="font-size: 12px; color: #64748b;">Оценка:</label>
-            <select id="newReviewRating" style="width:100%; padding:10px; background:#fff; color:#0f172a; border:1px solid #e2e8f0; border-radius:8px; margin-top:4px; margin-bottom:10px;">
+        <div>
+            <h3 style="margin-bottom: 10px; color: var(--text-main); font-size: 18px;">Оставить отзыв</h3>
+            <label style="font-size: 12px; color: var(--text-muted);">Оценка:</label>
+            <select id="newReviewRating" style="width:100%; padding:10px; background:#fff; color:var(--text-main); border:1px solid var(--card-border); border-radius:8px; margin-top:4px; margin-bottom:10px;">
                 <option value="5">⭐⭐⭐⭐⭐ (Отлично)</option>
                 <option value="4">⭐⭐⭐⭐ (Хорошо)</option>
                 <option value="3">⭐⭐⭐ (Нормально)</option>
             </select>
-            <label style="font-size: 12px; color: #64748b; display: block; margin-top: 6px;">Текст отзыва:</label>
-            <textarea id="newReviewText" rows="3" placeholder="Всё отлично, выдали быстро..." style="width:100%; padding:10px; background:#fff; color:#0f172a; border:1px solid #e2e8f0; border-radius:8px; margin-top:4px; margin-bottom:14px; outline:none; resize:none;"></textarea>
-            <button onclick="submitReview()" style="width:100%; padding:12px; background:#4f46e5; color:#fff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Отправить</button>
-            <button onclick="openReviewsModal()" style="width:100%; padding:10px; background:transparent; color:#64748b; border:1px solid #e2e8f0; border-radius:10px; margin-top:8px; cursor:pointer;">Назад</button>
+            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-top: 6px;">Текст отзыва:</label>
+            <textarea id="newReviewText" rows="3" placeholder="Всё отлично, выдали быстро..." style="width:100%; padding:10px; background:#fff; color:var(--text-main); border:1px solid var(--card-border); border-radius:8px; margin-top:4px; margin-bottom:14px; outline:none; resize:none;"></textarea>
+            <button onclick="submitReview()" class="stripe-pay-btn" style="margin-top:0;">Отправить</button>
+            <button onclick="openReviewsModal()" style="width:100%; padding:10px; background:transparent; color:var(--text-muted); border:1px solid var(--card-border); border-radius:10px; margin-top:8px; cursor:pointer;">Назад</button>
         </div>
     `;
 }
@@ -358,9 +359,7 @@ window.onload = () => {
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (user) {
         const usernameEl = document.getElementById('profileUsernameView');
-        const idEl = document.getElementById('profileIdView');
         if (usernameEl) usernameEl.innerText = user.first_name || user.username || 'Пользователь';
-        if (idEl) idEl.innerText = `@${user.username || 'id' + user.id}`;
     }
 
     renderCatalog();

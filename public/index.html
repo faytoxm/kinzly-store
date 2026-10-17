@@ -3,67 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
     <title>Kinzly Store — Цифровые подписки</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- Шапка магазина -->
-        <header class="app-header">
-            <div class="logo-area">
-                <span class="brand-title"><b>KINZLY</b> STORE</span>
+    <div class="container">
+        <!-- Шапка профиля -->
+        <div class="profile-card">
+            <div class="profile-info">
+                <h3 id="profileUsernameView">Пользователь</h3>
+                <p>Kinzly Store • Цифровые подписки</p>
             </div>
-        </header>
+        </div>
 
         <!-- 1. КАТАЛОГ -->
-        <div id="tab-catalog" class="tab-content active">
-            <div class="categories-banner">
-                <div class="category-pill active">🔥 Цифровые товары и подписки</div>
-            </div>
+        <div id="tab-catalog" class="tab-content">
             <div class="products-grid" id="productsGrid"></div>
         </div>
 
         <!-- 2. ЗАКАЗЫ -->
-        <div id="tab-orders" class="tab-content" style="display: none; padding: 16px;">
+        <div id="tab-orders" class="tab-content" style="display: none;">
             <h2 style="font-size: 18px; margin-bottom: 14px;">Мои заказы</h2>
             <div id="ordersList">
-                <p style="text-align: center; color: #8b8e9b; padding: 30px 0;">Загрузка заказов...</p>
+                <p style="text-align: center; color: var(--text-muted); padding: 30px 0;">Загрузка заказов...</p>
             </div>
         </div>
 
         <!-- 3. ПРОФИЛЬ -->
-        <div id="tab-profile" class="tab-content" style="display: none; padding: 16px;">
-            <div style="background: #1a1b22; padding: 16px; border-radius: 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                <div style="background: #6366f1; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">KS</div>
-                <div>
-                    <h3 style="margin: 0 0 4px 0; font-size: 16px;" id="profileUsernameView">Пользователь</h3>
-                    <span style="font-size: 12px; color: #8b8e9b;" id="profileIdView">@webapp</span>
-                </div>
-            </div>
-
+        <div id="tab-profile" class="tab-content" style="display: none;">
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div onclick="openReviewsModal()" style="background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);">
-                    <span>⭐ Отзывы покупателей</span>
-                    <span style="color: #a23eff; font-weight: bold;"><b id="profileRatingText">4.9</b> ›</span>
+                <div onclick="openReviewsModal()" style="background: var(--card-bg); padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid var(--card-border);">
+                    <span style="color: var(--text-main);">⭐ Отзывы покупателей</span>
+                    <span style="color: var(--accent-color); font-weight: bold;"><b id="profileRatingText">4.9</b> ›</span>
                 </div>
             </div>
         </div>
 
         <!-- 4. ПОМОЩЬ -->
-        <div id="tab-help" class="tab-content" style="display: none; padding: 16px;">
+        <div id="tab-help" class="tab-content" style="display: none;">
             <h2 style="font-size: 18px; margin-bottom: 14px;">Помощь и правила</h2>
-            
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <a href="https://t.me/KinzlyStoreSupport" target="_blank" style="text-decoration: none; background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; color: #fff; border: 1px solid rgba(255,255,255,0.05);">
+                <a href="https://t.me/KinzlyStoreSupport" target="_blank" style="text-decoration: none; background: var(--card-bg); padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); border: 1px solid var(--card-border);">
                     <span>💬 Написать в саппорт</span>
-                    <span style="color: #a23eff;">@KinzlyStoreSupport ›</span>
+                    <span style="color: var(--accent-color);">@KinzlyStoreSupport ›</span>
                 </a>
-                
-                <div onclick="openTermsModal()" style="background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #fff; border: 1px solid rgba(255,255,255,0.05);">
+                <div onclick="openTermsModal()" style="background: var(--card-bg); padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: var(--text-main); border: 1px solid var(--card-border);">
                     <span>📄 Условия использования</span>
-                    <span style="color: #8b8e9b;">›</span>
+                    <span style="color: var(--text-muted);">›</span>
                 </div>
             </div>
         </div>
@@ -90,32 +79,34 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ТОВАРА -->
-    <div id="productModal" class="modal-sheet" style="display: none;">
-        <div class="sheet-content">
-            <div class="sheet-handle" onclick="closeProductModal()"></div>
+    <div id="productModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                <span onclick="closeProductModal()" style="font-size: 24px; cursor: pointer; color: var(--text-muted);">&times;</span>
+            </div>
             <div id="modalProductDetails"></div>
         </div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ОТЗЫВОВ -->
-    <div id="reviewsModal" class="modal-sheet" style="display: none;">
-        <div class="sheet-content">
+    <div id="reviewsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="margin: 0; font-size: 18px;">Отзывы покупателей</h3>
-                <span onclick="closeReviewsModal()" style="font-size: 24px; cursor: pointer; color: #8b8e9b;">&times;</span>
+                <h3 style="margin: 0; font-size: 18px; color: var(--text-main);">Отзывы покупателей</h3>
+                <span onclick="closeReviewsModal()" style="font-size: 24px; cursor: pointer; color: var(--text-muted);">&times;</span>
             </div>
             <div id="reviewsModalList"></div>
         </div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО УСЛОВИЙ -->
-    <div id="termsModal" class="modal-sheet" style="display: none;">
-        <div class="sheet-content">
+    <div id="termsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="margin: 0; font-size: 18px;">Условия использования</h3>
-                <span onclick="closeTermsModal()" style="font-size: 24px; cursor: pointer; color: #8b8e9b;">&times;</span>
+                <h3 style="margin: 0; font-size: 18px; color: var(--text-main);">Условия использования</h3>
+                <span onclick="closeTermsModal()" style="font-size: 24px; cursor: pointer; color: var(--text-muted);">&times;</span>
             </div>
-            <p style="font-size: 13px; color: #bbb; line-height: 1.5;">
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
                 Сервис Kinzly Store предоставляет услуги по оформлению и предоставлению доступа к цифровым подпискам и сервисам. 
                 Все транзакции защищены. Гарантия на предоставленные доступы составляет 24 часа с момента выдачи. 
                 По всем вопросам вы можете обратиться в нашу службу поддержки через вкладку «Помощь».

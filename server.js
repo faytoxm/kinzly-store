@@ -112,7 +112,6 @@ app.get('/api/orders/:userId', (req, res) => {
     });
 });
 
-// Создание платежной сессии Stripe (сумма в тиынах/тенге конвертируется или передается в EUR для Stripe)
 app.post('/api/create-checkout-session', async (req, res) => {
     try {
         if (!storeOpen) {
@@ -133,7 +132,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
                     if (err) return res.status(500).json({ error: 'Database error' });
                     const orderId = this.lastID;
 
-                    // Конвертируем тенге в центы евро для Stripe (примерно 500 тенге ~ 1 EUR, либо фиксируем эквивалент)
                     const priceInEurCents = Math.round((amount / 500) * 100);
 
                     const session = await stripe.checkout.sessions.create({
