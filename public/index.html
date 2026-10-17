@@ -11,29 +11,28 @@
 <body>
 
     <div class="container">
-        <!-- Шапка профиля -->
-        <div class="profile-card">
-            <div class="profile-info">
-                <h3 id="profileUsernameView">Пользователь</h3>
-                <p>Kinzly Store • Цифровые подписки</p>
-            </div>
-        </div>
-
-        <!-- 1. КАТАЛОГ -->
+        <!-- 1. КАТАЛОГ (без лишней плашки профиля сверху) -->
         <div id="tab-catalog" class="tab-content">
             <div class="products-grid" id="productsGrid"></div>
         </div>
 
         <!-- 2. ЗАКАЗЫ -->
         <div id="tab-orders" class="tab-content" style="display: none;">
-            <h2 style="font-size: 18px; margin-bottom: 14px;">Мои заказы</h2>
+            <h2 style="font-size: 18px; margin-bottom: 14px; color: var(--text-main);">Мои заказы</h2>
             <div id="ordersList">
                 <p style="text-align: center; color: var(--text-muted); padding: 30px 0;">Загрузка заказов...</p>
             </div>
         </div>
 
-        <!-- 3. ПРОФИЛЬ -->
+        <!-- 3. ПРОФИЛЬ (плашка с именем отображается только здесь) -->
         <div id="tab-profile" class="tab-content" style="display: none;">
+            <div class="profile-card" style="margin-bottom: 16px;">
+                <div class="profile-info">
+                    <h3 id="profileUsernameView">Пользователь</h3>
+                    <p>Kinzly Store • Цифровые подписки</p>
+                </div>
+            </div>
+
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div onclick="openReviewsModal()" style="background: var(--card-bg); padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid var(--card-border);">
                     <span style="color: var(--text-main);">⭐ Отзывы покупателей</span>
@@ -44,7 +43,7 @@
 
         <!-- 4. ПОМОЩЬ -->
         <div id="tab-help" class="tab-content" style="display: none;">
-            <h2 style="font-size: 18px; margin-bottom: 14px;">Помощь и правила</h2>
+            <h2 style="font-size: 18px; margin-bottom: 14px; color: var(--text-main);">Помощь и правила</h2>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <a href="https://t.me/KinzlyStoreSupport" target="_blank" style="text-decoration: none; background: var(--card-bg); padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); border: 1px solid var(--card-border);">
                     <span>💬 Написать в саппорт</span>
