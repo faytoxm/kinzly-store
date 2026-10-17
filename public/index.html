@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kinzly Store — Цифровые подписки</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Подключаем Telegram WebApp скрипт -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -14,10 +13,7 @@
         <!-- Шапка магазина -->
         <header class="app-header">
             <div class="logo-area">
-                <span class="brand-title"><b>kinzly</b> Store</span>
-            </div>
-            <div class="user-balance-badge" onclick="switchTab('profile')">
-                <span id="userBonusHeader">0 ₸</span>
+                <span class="brand-title"><b>KINZLY</b> STORE</span>
             </div>
         </header>
 
@@ -26,33 +22,31 @@
             <div class="categories-banner">
                 <div class="category-pill active">🔥 Цифровые товары и подписки</div>
             </div>
-            <div class="products-grid" id="productsGrid">
-                <!-- Сюда динамически рендерятся карточки товаров из app.js -->
-            </div>
+            <div class="products-grid" id="productsGrid"></div>
         </div>
 
         <!-- 2. ЗАКАЗЫ -->
         <div id="tab-orders" class="tab-content" style="display: none; padding: 16px;">
             <h2 style="font-size: 18px; margin-bottom: 14px;">Мои заказы</h2>
-            <div id="ordersList" style="text-align: center; color: #8b8e9b; padding: 30px 0;">
-                У вас пока нет активных заказов
+            <div id="ordersList">
+                <p style="text-align: center; color: #8b8e9b; padding: 30px 0;">Загрузка заказов...</p>
             </div>
         </div>
 
         <!-- 3. ПРОФИЛЬ -->
         <div id="tab-profile" class="tab-content" style="display: none; padding: 16px;">
             <div style="background: #1a1b22; padding: 16px; border-radius: 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                <div style="background: #a3ff2e; color: #121316; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">f</div>
+                <div style="background: #6366f1; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">KS</div>
                 <div>
-                    <h3 style="margin: 0 0 4px 0; font-size: 16px;" id="profileUsernameView">faytox</h3>
-                    <span style="font-size: 12px; color: #8b8e9b;" id="profileIdView">@faytoxm</span>
+                    <h3 style="margin: 0 0 4px 0; font-size: 16px;" id="profileUsernameView">Пользователь</h3>
+                    <span style="font-size: 12px; color: #8b8e9b;" id="profileIdView">@webapp</span>
                 </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div onclick="openReviewsModal()" style="background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);">
                     <span>⭐ Отзывы покупателей</span>
-                    <span style="color: #a3ff2e; font-weight: bold;"><b id="profileRatingText">4.9</b> ›</span>
+                    <span style="color: #a23eff; font-weight: bold;"><b id="profileRatingText">4.9</b> ›</span>
                 </div>
             </div>
         </div>
@@ -62,9 +56,9 @@
             <h2 style="font-size: 18px; margin-bottom: 14px;">Помощь и правила</h2>
             
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <a href="https://t.me/wezoll" target="_blank" style="text-decoration: none; background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; color: #fff; border: 1px solid rgba(255,255,255,0.05);">
+                <a href="https://t.me/KinzlyStoreSupport" target="_blank" style="text-decoration: none; background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; color: #fff; border: 1px solid rgba(255,255,255,0.05);">
                     <span>💬 Написать в саппорт</span>
-                    <span style="color: #a3ff2e;">@wezoll ›</span>
+                    <span style="color: #a23eff;">@KinzlyStoreSupport ›</span>
                 </a>
                 
                 <div onclick="openTermsModal()" style="background: #1a1b22; padding: 16px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #fff; border: 1px solid rgba(255,255,255,0.05);">

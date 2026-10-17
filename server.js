@@ -31,8 +31,10 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         userFullName TEXT,
+        serviceName TEXT,
+        rating INTEGER DEFAULT 5,
         text TEXT,
-        status TEXT DEFAULT 'pending',
+        status TEXT DEFAULT 'approved',
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 });
@@ -56,9 +58,7 @@ function isAdmin(userId) {
 }
 
 let storeOpen = true;
-//Установка выпадающего списка команд (рядом с кнопкой / по значку слэша)
-// Для англоязычных пользователей
-// Безопасная обработка ошибок бота, чтобы сервер никогда не падал (защита от 502)
+
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err.message);
 });
@@ -66,6 +66,8 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
     console.error('Unhandled Rejection:', reason);
 });
+
+app.use(express.json());
 
 // ==================== REST API ДЛЯ МИНИ-ПРИЛОЖЕНИЯ ====================
 
@@ -82,27 +84,24 @@ app.get('/api/store-status', (req, res) => {
 });
 
 app.get('/api/reviews', (req, res) => {
-    db.all(`SELECT userFullName, text FROM reviews WHERE status = 'approved' ORDER BY id DESC LIMIT 10`, [], (err, rows) => {
+    db.all(`SELECT userFullName, serviceName, rating, text, createdAt FROM reviews WHERE status = 'approved' ORDER BY id DESC LIMIT 20`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json(rows);
     });
 });
 
-app.post('/api/reviews', express.json(), (req, res) => {
-    const { userFullName, text } = req.body;
-    if (!userFullName || !text) return res.status(400).json({ error: 'Missing fields' });
+app.post('/api/reviews', (req, res) => {
+    const { username, service, text, rating } = req.body;
+    if (!text) return res.status(400).json({ error: 'Text required' });
 
-    db.run(`INSERT INTO reviews (userFullName, text, status) VALUES (?, ?, 'pending')`, [userFullName, text], function(err) {
-        if (err) return res.status(500).json({ error: 'Database error' });
-        
-        ADMIN_IDS.forEach(adminId => {
-            bot.telegram.sendMessage(adminId, 
-                `💬 New Review for Moderation!\nFrom: ${userFullName}\nText: "${text}"\n\nUse /admin to approve or delete.`
-            ).catch(() => {});
-        });
-
-        res.json({ success: true });
-    });
+    db.run(
+        `INSERT INTO reviews (userFullName, serviceName, rating, text, status) VALUES (?, ?, ?, ?, 'approved')`,
+        [username || 'Покупатель', service || 'Цифровая подписка', rating || 5, text],
+        function(err) {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            res.json({ success: true });
+        }
+    );
 });
 
 app.get('/api/orders/:userId', (req, res) => {
@@ -113,25 +112,29 @@ app.get('/api/orders/:userId', (req, res) => {
     });
 });
 
-app.post('/api/create-checkout-session', express.json(), async (req, res) => {
+// Создание платежной сессии Stripe (сумма в тиынах/тенге конвертируется или передается в EUR для Stripe)
+app.post('/api/create-checkout-session', async (req, res) => {
     try {
         if (!storeOpen) {
-            return res.status(400).json({ error: 'Orders are temporarily suspended.' });
+            return res.status(400).json({ error: 'Магазин временно закрыт.' });
         }
 
         const { productName, amount, customerTelegramId } = req.body;
 
         db.get(`SELECT isActive FROM product_status WHERE productName = ?`, [productName], async (err, row) => {
             if (row && row.isActive === 0) {
-                return res.status(400).json({ error: 'This subscription is temporarily sold out.' });
+                return res.status(400).json({ error: 'Этот товар временно распродан.' });
             }
 
             db.run(
                 `INSERT INTO orders (customerTelegramId, productName, amount, status) VALUES (?, ?, ?, ?)`,
-                [customerTelegramId, productName, amount, 'pending'],
+                [customerTelegramId || 'guest', productName, amount, 'pending'],
                 async function(err) {
                     if (err) return res.status(500).json({ error: 'Database error' });
                     const orderId = this.lastID;
+
+                    // Конвертируем тенге в центы евро для Stripe (примерно 500 тенге ~ 1 EUR, либо фиксируем эквивалент)
+                    const priceInEurCents = Math.round((amount / 500) * 100);
 
                     const session = await stripe.checkout.sessions.create({
                         payment_method_types: ['card'],
@@ -139,14 +142,14 @@ app.post('/api/create-checkout-session', express.json(), async (req, res) => {
                             price_data: {
                                 currency: 'eur',
                                 product_data: { name: productName },
-                                unit_amount: amount,
+                                unit_amount: priceInEurCents > 50 ? priceInEurCents : 100,
                             },
                             quantity: 1,
                         }],
                         mode: 'payment',
                         success_url: `${process.env.WEBAPP_URL || 'http://localhost:3000'}?success=true`,
                         cancel_url: `${process.env.WEBAPP_URL || 'http://localhost:3000'}?canceled=true`,
-                        metadata: { orderId: String(orderId), customerTelegramId: String(customerTelegramId), productName }
+                        metadata: { orderId: String(orderId), customerTelegramId: String(customerTelegramId || 'guest'), productName }
                     });
 
                     res.json({ url: session.url });
@@ -156,37 +159,6 @@ app.post('/api/create-checkout-session', express.json(), async (req, res) => {
     } catch (error) {
         console.error('Stripe error:', error.message);
         res.status(500).json({ error: 'Stripe connection error.' });
-    }
-});
-
-app.post('/api/retry-checkout', express.json(), async (req, res) => {
-    try {
-        if (!storeOpen) return res.status(400).json({ error: 'Store closed' });
-        const { orderId } = req.body;
-
-        db.get(`SELECT * FROM orders WHERE id = ? AND status = 'pending'`, [orderId], async (err, order) => {
-            if (err || !order) return res.status(404).json({ error: 'Order not found or already paid' });
-
-            const session = await stripe.checkout.sessions.create({
-                payment_method_types: ['card'],
-                line_items: [{
-                    price_data: {
-                        currency: 'eur',
-                        product_data: { name: order.productName },
-                        unit_amount: order.amount,
-                    },
-                    quantity: 1,
-                }],
-                mode: 'payment',
-                success_url: `${process.env.WEBAPP_URL || 'https://vesly-store.onrender.com'}?success=true`,
-                cancel_url: `${process.env.WEBAPP_URL || 'https://vesly-store.onrender.com'}?canceled=true`,
-                metadata: { orderId: String(order.id), customerTelegramId: String(order.customerTelegramId), productName: order.productName }
-            });
-
-            res.json({ url: session.url });
-        });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
     }
 });
 
@@ -201,14 +173,14 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
         const productName = session.metadata.productName;
 
         db.run(`UPDATE orders SET status = 'paid' WHERE id = ?`, [orderId], (err) => {
-            if (!err) {
+            if (!err && customerTelegramId !== 'guest') {
                 bot.telegram.sendMessage(customerTelegramId,
-                    `🎉 Payment Successful!\nProduct: ${productName}\nYour order is being processed. An administrator will send your activation link shortly!`
+                    `🎉 Оплата прошла успешно!\nТовар: ${productName}\nЗаказ обрабатывается, администратор скоро пришлет ссылку на доступы.`
                 ).catch(() => {});
 
                 ADMIN_IDS.forEach(adminId => {
                     bot.telegram.sendMessage(adminId, 
-                        `💰 PAID ORDER #${orderId}\nProduct: ${productName}\nUser ID: ${customerTelegramId}\n\nUse /fulfill ${orderId} <link> to send subscription.`
+                        `💰 ОПЛАЧЕН ЗАКАЗ #${orderId}\nТовар: ${productName}\nUser ID: ${customerTelegramId}\n\nИспользуйте /fulfill ${orderId} <ссылка>`
                     ).catch(() => {});
                 });
             }
@@ -220,323 +192,47 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==================== ТЕЛЕГРАМ БОТ И ИНТЕРФЕЙС ====================
+// ==================== ТЕЛЕГРАМ БОТ ====================
 
 bot.start((ctx) => {
-    const userName = ctx.from.first_name || 'there';
+    const userName = ctx.from.first_name || 'друг';
     ctx.reply(
-        `👋 Welcome to Vesly Store, ${userName}!\n\n` +
-        `🚀 Your premier destination for European digital subscriptions at the best prices.\n` +
-        `✨ Fast activation, secure payments via Stripe, and 24/7 support.\n\n` +
-        `Choose an action below or open our store:`,
+        `👋 Привет, ${userName}!\n\n` +
+        `🛒 Добро пожаловать в WA Store — твой надежный магазин цифровых подписок в Казахстане.\n` +
+        `✨ Быстрая выдача, безопасная оплата и гарантия 24 часа.`,
         Markup.inlineKeyboard([
-            [Markup.button.webApp('🛒 Open Vesly Store', process.env.WEBAPP_URL || 'https://vesly-store.onrender.com')],
-            [Markup.button.callback('💬 FAQ & Help', 'bot_help'), Markup.button.callback('📦 My Orders', 'bot_orders')]
+            [Markup.button.webApp('🛒 Открыть магазин', process.env.WEBAPP_URL || 'http://localhost:3000')]
         ])
     );
-});
-
-bot.help((ctx) => {
-    ctx.reply(
-        `📖 Vesly Store Help & FAQ\n\n` +
-        `1. How to buy? Click "Open Vesly Store", choose your subscription, and pay securely via Stripe in Euros (€).\n` +
-        `2. When do I get my link? After payment, your order goes to processing. Our admin will send your activation link directly to this chat.\n` +
-        `3. Need support? Contact our manager at @VeslyStoreSupport.`
-    );
-});
-
-bot.action('bot_help', (ctx) => {
-    ctx.editMessageText(
-        `📖 Vesly Store Help & FAQ\n\n` +
-        `1. How to buy? Click the store button, select a service, and pay via Stripe (€).\n` +
-        `2. Activation: Links are sent directly to your chat within a few minutes after payment.\n` +
-        `3. Support: @VeslyStoreSupport`,
-        Markup.inlineKeyboard([
-            [Markup.button.callback('⬅️ Back to Start', 'bot_back')]
-        ])
-    ).catch(() => {});
-    ctx.answerCbQuery().catch(() => {});
-});
-
-bot.action('bot_orders', (ctx) => {
-    const userId = ctx.from.id;
-    db.all(`SELECT * FROM orders WHERE customerTelegramId = ? ORDER BY id DESC LIMIT 5`, [userId], (err, rows) => {
-        if (!rows || rows.length === 0) {
-            ctx.editMessageText(
-                `📦 Your Orders\n\nYou haven't made any purchases yet. Open the store to check out our deals!`,
-                Markup.inlineKeyboard([
-                    [Markup.button.webApp('🛒 Open Vesly Store', process.env.WEBAPP_URL || 'https://vesly-store.onrender.com')],
-                    [Markup.button.callback('⬅️ Back to Start', 'bot_back')]
-                ])
-            ).catch(() => {});
-        } else {
-            let text = `📦 Your Recent Orders:\n\n`;
-            rows.forEach(o => {
-                text += `• ${o.productName} — €${(o.amount/100).toFixed(2)} [Status: ${o.status}]\n`;
-                if (o.link) text += `  Link: ${o.link}\n`;
-                text += `---\n`;
-            });
-            ctx.editMessageText(text, Markup.inlineKeyboard([
-                [Markup.button.callback('⬅️ Back to Start', 'bot_back')]
-            ])).catch(() => {});
-        }
-        ctx.answerCbQuery().catch(() => {});
-    });
-});
-
-bot.action('bot_back', (ctx) => {
-    const userName = ctx.from.first_name || 'there';
-    ctx.editMessageText(
-        `👋 Welcome back to Vesly Store, ${userName}!\n\nChoose an action below or open our store:`,
-        Markup.inlineKeyboard([
-            [Markup.button.webApp('🛒 Open Vesly Store', process.env.WEBAPP_URL || 'https://vesly-store.onrender.com')],
-            [Markup.button.callback('💬 FAQ & Help', 'bot_help'), Markup.button.callback('📦 My Orders', 'bot_orders')]
-        ])
-    ).catch(() => {});
-    ctx.answerCbQuery().catch(() => {});
-});
-
-// ==================== АДМИН-ПАНЕЛЬ ====================
-
-bot.command('admin', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.reply('Access denied.');
-
-    ctx.reply(
-        `👑 Vesly Store Admin Panel\nGlobal status: ${storeOpen ? 'OPEN' : 'CLOSED'}\n\nChoose an action:`,
-        Markup.inlineKeyboard([
-            [Markup.button.callback(storeOpen ? '🔴 Close Shop' : '🟢 Open Shop', 'toggle_shop')],
-            [Markup.button.callback('📦 Manage Products (Stop-list)', 'manage_products')],
-            [Markup.button.callback('⏳ Pending / Paid Orders', 'view_orders')],
-            [Markup.button.callback('💬 Moderate Reviews', 'view_reviews')]
-        ])
-    );
-});
-
-bot.action('toggle_shop', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-    storeOpen = !storeOpen;
-    ctx.editMessageText(
-        `👑 Vesly Store Admin Panel\nGlobal status: ${storeOpen ? 'OPEN' : 'CLOSED'}`,
-        Markup.inlineKeyboard([
-            [Markup.button.callback(storeOpen ? '🔴 Close Shop' : '🟢 Open Shop', 'toggle_shop')],
-            [Markup.button.callback('📦 Manage Products (Stop-list)', 'manage_products')],
-            [Markup.button.callback('⏳ Pending / Paid Orders', 'view_orders')],
-            [Markup.button.callback('💬 Moderate Reviews', 'view_reviews')]
-        ])
-    ).catch(() => {});
-    ctx.answerCbQuery(`Shop is now ${storeOpen ? 'OPEN' : 'CLOSED'}`).catch(() => {});
-});
-
-bot.action('manage_products', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-
-    const products = [
-        'Duolingo Super', 'ChatGPT Plus', 'Adobe Express Premium', 'CapCut Pro',
-        'Google AI Pro', 'Spotify Premium', 'Canva Pro', 'Coursera Premium'
-    ];
-
-    db.all(`SELECT productName, isActive FROM product_status`, [], (err, rows) => {
-        const statusMap = {};
-        if (rows) rows.forEach(r => statusMap[r.productName] = r.isActive);
-
-        const buttons = products.map(prod => {
-            const active = statusMap[prod] !== undefined ? statusMap[prod] : 1;
-            const icon = active === 1 ? '🟢' : '🔴';
-            return [Markup.button.callback(`${icon} ${prod}`, `toggle_prod_${prod}`)];
-        });
-
-        buttons.push([Markup.button.callback('⬅️ Back', 'back_to_admin')]);
-        ctx.editMessageText('📦 Product Stop-list Management:', Markup.inlineKeyboard(buttons)).catch(() => {});
-        ctx.answerCbQuery().catch(() => {});
-    });
-});
-
-// Надежное переключение статуса товара без падения сервера
-bot.action(/^toggle_prod_(.+)$/, (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.').catch(() => {});
-    const productName = ctx.match[1];
-
-    db.get(`SELECT isActive FROM product_status WHERE productName = ?`, [productName], (err, row) => {
-        let newState = row ? (row.isActive === 1 ? 0 : 1) : 0;
-        
-        const updateDb = () => {
-            db.run(`INSERT OR REPLACE INTO product_status (productName, isActive) VALUES (?, ?)`, [productName, newState], (dbErr) => {
-                if (dbErr) {
-                    ctx.answerCbQuery('Database error!').catch(() => {});
-                    return;
-                }
-                ctx.answerCbQuery(`${productName} -> ${newState === 1 ? 'ACTIVE' : 'ON STOP'}`).catch(() => {});
-                
-                // Перерисовываем меню стоп-листа
-                const products = [
-                    'Duolingo Super', 'ChatGPT Plus', 'Adobe Express Premium', 'CapCut Pro',
-                    'Google AI Pro', 'Spotify Premium', 'Canva Pro', 'Coursera Premium'
-                ];
-
-                db.all(`SELECT productName, isActive FROM product_status`, [], (err2, rows) => {
-                    const statusMap = {};
-                    if (rows) rows.forEach(r => statusMap[r.productName] = r.isActive);
-
-                    const buttons = products.map(prod => {
-                        const active = statusMap[prod] !== undefined ? statusMap[prod] : 1;
-                        const icon = active === 1 ? '🟢' : '🔴';
-                        return [Markup.button.callback(`${icon} ${prod}`, `toggle_prod_${prod}`)];
-                    });
-
-                    buttons.push([Markup.button.callback('⬅️ Back', 'back_to_admin')]);
-                    ctx.editMessageText('📦 Product Stop-list Management:', Markup.inlineKeyboard(buttons)).catch(() => {});
-                });
-            });
-        };
-
-        if (row) {
-            db.run(`UPDATE product_status SET isActive = ? WHERE productName = ?`, [newState, productName], updateDb);
-        } else {
-            db.run(`INSERT INTO product_status (productName, isActive) VALUES (?, ?)`, [productName, newState], updateDb);
-        }
-    });
-});
-
-bot.action('view_orders', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-
-    db.all(`SELECT * FROM orders WHERE status != 'completed' ORDER BY id DESC LIMIT 10`, [], (err, rows) => {
-        if (!rows || rows.length === 0) {
-            return ctx.answerCbQuery('No active orders.');
-        }
-
-        let text = `⏳ Active / Paid Orders:\n\n`;
-        rows.forEach(o => {
-            text += `ID: #${o.id} | [${o.status.toUpperCase()}] ${o.productName} | €${(o.amount/100).toFixed(2)}\nUser ID: ${o.customerTelegramId}\n---\n`;
-        });
-        text += `\nUse: /fulfill <id> <link>`;
-
-        ctx.editMessageText(text, Markup.inlineKeyboard([
-            [Markup.button.callback('⬅️ Back', 'back_to_admin')]
-        ])).catch(() => {});
-        ctx.answerCbQuery().catch(() => {});
-    });
-});
-
-bot.action('view_reviews', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-
-    db.all(`SELECT * FROM reviews WHERE status = 'pending'`, [], (err, rows) => {
-        if (!rows || rows.length === 0) {
-            return ctx.answerCbQuery('No reviews for moderation.');
-        }
-
-        const buttons = rows.map(r => [
-            Markup.button.callback(`✅ Approve #${r.id}`, `approve_review_${r.id}`),
-            Markup.button.callback(`❌ Delete #${r.id}`, `delete_review_${r.id}`)
-        ]);
-        buttons.push([Markup.button.callback('⬅️ Back', 'back_to_admin')]);
-
-        let text = `💬 Pending Reviews:\n\n`;
-        rows.forEach(r => {
-            text += `ID: #${r.id} | ${r.userFullName}\n"${r.text}"\n---\n`;
-        });
-
-        ctx.editMessageText(text, Markup.inlineKeyboard(buttons)).catch(() => {});
-        ctx.answerCbQuery().catch(() => {});
-    });
-});
-
-bot.action(/^approve_review_(\d+)$/, (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-    const reviewId = ctx.match[1];
-    db.run(`UPDATE reviews SET status = 'approved' WHERE id = ?`, [reviewId], () => {
-        ctx.answerCbQuery('Review approved!').catch(() => {});
-        ctx.deleteMessage().catch(() => {});
-    });
-});
-
-bot.action(/^delete_review_(\d+)$/, (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-    const reviewId = ctx.match[1];
-    db.run(`DELETE FROM reviews WHERE id = ?`, [reviewId], () => {
-        ctx.answerCbQuery('Review deleted.').catch(() => {});
-        ctx.deleteMessage().catch(() => {});
-    });
-});
-
-bot.action('back_to_admin', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Access denied.');
-    ctx.editMessageText(
-        `👑 Vesly Store Admin Panel\nGlobal status: ${storeOpen ? 'OPEN' : 'CLOSED'}`,
-        Markup.inlineKeyboard([
-            [Markup.button.callback(storeOpen ? '🔴 Close Shop' : '🟢 Open Shop', 'toggle_shop')],
-            [Markup.button.callback('📦 Manage Products (Stop-list)', 'manage_products')],
-            [Markup.button.callback('⏳ Pending / Paid Orders', 'view_orders')],
-            [Markup.button.callback('💬 Moderate Reviews', 'view_reviews')]
-        ])
-    ).catch(() => {});
-    ctx.answerCbQuery().catch(() => {});
 });
 
 bot.command('fulfill', (ctx) => {
-    if (!isAdmin(ctx.from.id)) return ctx.reply('Access denied.');
+    if (!isAdmin(ctx.from.id)) return ctx.reply('Доступ запрещен.');
     const args = ctx.message.text.split(' ');
     const orderId = Number(args[1]);
     const link = args[2];
 
-    if (!orderId || !link) return ctx.reply('Usage: /fulfill <order_id> <link>');
+    if (!orderId || !link) return ctx.reply('Использование: /fulfill <order_id> <ссылка>');
 
     db.get(`SELECT * FROM orders WHERE id = ?`, [orderId], (err, order) => {
-        if (err || !order) return ctx.reply('Order not found.');
+        if (err || !order) return ctx.reply('Заказ не найден.');
 
         db.run(`UPDATE orders SET status = 'completed', link = ? WHERE id = ?`, [link, orderId], () => {
             bot.telegram.sendMessage(order.customerTelegramId,
-                `🎉 Your subscription is ready!\nProduct: ${order.productName}\nActivation Link: ${link}`
+                `🎉 Ваша подписка готова!\nТовар: ${order.productName}\nСсылка доступа: ${link}`
             ).catch(() => {});
 
-            ctx.reply(`Order #${orderId} fulfilled successfully!`);
+            ctx.reply(`Заказ #${orderId} успешно выполнен!`);
         });
     });
 });
 
 try {
     bot.launch();
-    console.log('Vesly Store bot launched successfully.');
+    console.log('Telegram bot launched successfully.');
 } catch (e) {
     console.error('Failed to launch bot:', e.message);
 }
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
-
-const fs = require('fs');
-const path = require('path');
-
-const REVIEWS_FILE = path.join(__dirname, 'reviews.json');
-
-function getReviews() {
-    if (!fs.existsSync(REVIEWS_FILE)) return [];
-    try {
-        return JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf8'));
-    } catch (e) {
-        return [];
-    }
-}
-
-app.get('/api/reviews', (req, res) => {
-    res.json(getReviews());
-});
-
-app.post('/api/reviews', (req, res) => {
-    const { username, service, text, rating } = req.body;
-    if (!text) return res.status(400).json({ error: 'Text required' });
-
-    const reviews = getReviews();
-    const newReview = {
-        user: username || 'Аноним',
-        service: service || 'Подписка',
-        date: new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-        text,
-        rating: Number(rating) || 5
-    };
-
-    reviews.unshift(newReview);
-    fs.writeFileSync(REVIEWS_FILE, JSON.stringify(reviews, null, 2));
-    res.json({ success: true, review: newReview });
-});
