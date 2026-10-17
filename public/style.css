@@ -14,12 +14,13 @@
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent; /* Убирает синий прямоугольник при таче */
 }
 
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
-    padding-bottom: 80px;
+    padding-bottom: 90px;
 }
 
 .container {
@@ -28,28 +29,148 @@ body {
     padding: 16px;
 }
 
-/* Шапка профиля */
-.profile-card {
+/* Шапка магазина */
+.app-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-top: 4px;
+}
+
+.store-brand {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text-main);
+}
+
+.store-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.section-title {
+    font-size: 18px;
+    margin-bottom: 14px;
+    color: var(--text-main);
+}
+
+/* Профиль в стиле Telegram */
+.tg-profile-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: 16px;
-    padding: 16px;
+    padding: 20px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.profile-info h3 {
-    font-size: 16px;
-    color: var(--text-main);
-    margin-bottom: 2px;
+.tg-avatar {
+    width: 56px;
+    height: 56px;
+    background: var(--accent-color);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    flex-shrink: 0;
 }
 
-.profile-info p {
+.tg-user-info h3 {
+    font-size: 17px;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.tg-user-info p {
+    font-size: 13px;
+    color: var(--accent-color);
+    font-weight: 500;
+}
+
+.menu-card-item {
+    background: var(--card-bg);
+    padding: 16px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+}
+
+.menu-arrow {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* FAQ & Support */
+.support-banner {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 13px;
+    color: var(--text-main);
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.support-link {
+    color: var(--accent-color);
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.faq-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.faq-item {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+}
+
+.faq-question {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.faq-question span {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.faq-answer {
     font-size: 13px;
     color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.4;
+    display: none;
+}
+
+.faq-item.active .faq-answer {
+    display: block;
+}
+
+.faq-item.active .faq-question span {
+    transform: rotate(90deg);
 }
 
 /* Каталог карточек */
@@ -69,9 +190,8 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.product-card-modern:hover {
-    border-color: var(--accent-color);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.2);
+.product-card-modern:active {
+    opacity: 0.9;
 }
 
 .card-top-row {
@@ -145,7 +265,6 @@ body {
     color: var(--text-main);
 }
 
-/* Статус "в наличии" / NEW — всегда ярко-зеленые */
 .status-badge {
     font-size: 11px;
     color: #4ade80 !important;
@@ -155,13 +274,12 @@ body {
     font-weight: 600;
 }
 
-/* Статус "под заказ" — желтоватый */
 .status-badge.warning-status {
     color: #fbbf24 !important;
     background: rgba(251, 191, 36, 0.12) !important;
 }
 
-/* Нижняя навигация */
+/* Увеличенная нижняя навигация с SVG иконками */
 .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -171,9 +289,9 @@ body {
     border-top: 1px solid var(--card-border);
     display: flex;
     justify-content: space-around;
-    padding: 10px 0;
+    padding: 12px 0 16px 0;
     z-index: 100;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .nav-item {
@@ -183,23 +301,67 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
-    gap: 4px;
+    gap: 5px;
 }
 
 .nav-item.active {
     color: var(--accent-color);
 }
 
-/* Модальные окна */
+.nav-item svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+/* Полноценная страница товара вместо маленького окна */
+.product-page-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-color);
+    z-index: 2000;
+    overflow-y: auto;
+    display: none;
+}
+
+.product-page-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.product-page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-top: 4px;
+}
+
+.back-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Модалки общего вида */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(15, 23, 42, 0.8);
     display: none;
     justify-content: center;
     align-items: flex-end;
@@ -216,19 +378,18 @@ body {
     padding: 20px;
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .modal-product-header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 16px;
 }
 
 .modal-icon {
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
 }
 
@@ -236,14 +397,14 @@ body {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--card-border);
     border-radius: 12px;
-    padding: 12px;
+    padding: 14px;
     margin-bottom: 16px;
 }
 
 .info-section-box h4 {
     font-size: 11px;
     color: var(--text-muted);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     letter-spacing: 0.5px;
 }
 
@@ -253,11 +414,11 @@ body {
     color: #fff;
     border: none;
     border-radius: 12px;
-    padding: 14px;
-    font-size: 15px;
+    padding: 16px;
+    font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    margin-top: 16px;
+    margin-top: 10px;
     transition: background 0.2s;
 }
 

@@ -1,6 +1,7 @@
 let currentTab = 'catalog';
 let reviewsData = [];
 
+// Список товаров Kinzly Store
 const products = [
     { 
         id: 'google',
@@ -157,7 +158,7 @@ function renderCatalog() {
                         <span class="old-price-kz">${p.oldPrice.toLocaleString()} ₸</span>
                         <span class="current-price-kz">${p.price.toLocaleString()} ₸</span>
                     </div>
-                    <span class="status-badge">${p.status}</span>
+                    <span class="status-badge ${p.status.includes('заказ') ? 'warning-status' : ''}">${p.status}</span>
                 </div>
             </div>
         `;
@@ -176,24 +177,24 @@ function openProductModal(productId) {
         <div class="modal-product-header">
             <img src="${p.icon}" class="modal-icon" />
             <div>
-                <h2 style="color: var(--text-main); font-size: 18px;">${p.name}</h2>
-                <span style="color: var(--text-muted); font-size: 12px;">⏳ ${p.duration} — выдача сразу</span>
+                <h2 style="color: var(--text-main); font-size: 20px; margin-bottom: 2px;">${p.name}</h2>
+                <span style="color: var(--accent-color); font-size: 13px; font-weight: 500;">⏳ ${p.duration} — выдача сразу</span>
             </div>
         </div>
 
         <div class="info-section-box">
             <h4>ОПИСАНИЕ И УСЛОВИЯ</h4>
-            <p style="color: var(--text-main); font-size: 13px; margin-bottom: 4px;"><b>Гарантия:</b> ${p.guarantee}</p>
-            <p style="color: var(--text-main); font-size: 13px; margin-bottom: 6px;"><b>Выдача:</b> ${p.deliveryType}</p>
-            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.4;">${p.fullDesc}</p>
-            <ul style="padding-left: 16px; margin-top: 8px; font-size: 13px; color: var(--text-main);">${featuresHtml}</ul>
+            <p style="color: var(--text-main); font-size: 14px; margin-bottom: 6px;"><b>Гарантия:</b> ${p.guarantee}</p>
+            <p style="color: var(--text-main); font-size: 14px; margin-bottom: 8px;"><b>Выдача:</b> ${p.deliveryType}</p>
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">${p.fullDesc}</p>
+            <ul style="padding-left: 18px; margin-top: 10px; font-size: 13px; color: var(--text-main); display: flex; flex-direction: column; gap: 4px;">${featuresHtml}</ul>
         </div>
 
         <div class="info-section-box">
-            <h4>СТОИМОСТЬ</h4>
-            <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="old-price-kz">${p.oldPrice.toLocaleString()} ₸</span>
-                <span class="current-price-kz" style="font-size: 18px;">${p.price.toLocaleString()} ₸</span>
+            <h4>СТОИМОСТЬ ПОДПИСКИ</h4>
+            <div style="display: flex; align-items: baseline; gap: 10px;">
+                <span class="old-price-kz" style="font-size: 14px;">${p.oldPrice.toLocaleString()} ₸</span>
+                <span class="current-price-kz" style="font-size: 22px;">${p.price.toLocaleString()} ₸</span>
             </div>
         </div>
 
@@ -202,11 +203,15 @@ function openProductModal(productId) {
         </button>
     `;
 
-    document.getElementById('productModal').style.display = 'flex';
+    document.getElementById('productModal').style.display = 'block';
 }
 
 function closeProductModal() {
     document.getElementById('productModal').style.display = 'none';
+}
+
+function toggleFaq(element) {
+    element.classList.toggle('active');
 }
 
 function payWithStripe(productName, price) {
@@ -279,7 +284,7 @@ function openReviewsModal() {
         html += `<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Пока нет отзывов. Станьте первым!</p>`;
     } else {
         html += reviewsData.map(r => `
-            <div style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--card-border);">
+            <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--card-border);">
                 <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
                     <strong style="color: var(--text-main);">${r.userFullName || 'Покупатель'}</strong>
                     <span style="color: var(--text-muted);">${r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</span>
@@ -300,15 +305,15 @@ function openAddReviewForm() {
         <div>
             <h3 style="margin-bottom: 10px; color: var(--text-main); font-size: 18px;">Оставить отзыв</h3>
             <label style="font-size: 12px; color: var(--text-muted);">Оценка:</label>
-            <select id="newReviewRating" style="width:100%; padding:10px; background:#fff; color:var(--text-main); border:1px solid var(--card-border); border-radius:8px; margin-top:4px; margin-bottom:10px;">
+            <select id="newReviewRating" style="width:100%; padding:10px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--card-border); border-radius:8px; margin-top:4px; margin-bottom:10px;">
                 <option value="5">⭐⭐⭐⭐⭐ (Отлично)</option>
                 <option value="4">⭐⭐⭐⭐ (Хорошо)</option>
                 <option value="3">⭐⭐⭐ (Нормально)</option>
             </select>
             <label style="font-size: 12px; color: var(--text-muted); display: block; margin-top: 6px;">Текст отзыва:</label>
-            <textarea id="newReviewText" rows="3" placeholder="Всё отлично, выдали быстро..." style="width:100%; padding:10px; background:#fff; color:var(--text-main); border:1px solid var(--card-border); border-radius:8px; margin-top:4px; margin-bottom:14px; outline:none; resize:none;"></textarea>
+            <textarea id="newReviewText" rows="3" placeholder="Всё отлично, выдали быстро..." style="width:100%; padding:10px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--card-border); border-radius:8px; margin-top:4px; margin-bottom:14px; outline:none; resize:none;"></textarea>
             <button onclick="submitReview()" class="stripe-pay-btn" style="margin-top:0;">Отправить</button>
-            <button onclick="openReviewsModal()" style="width:100%; padding:10px; background:transparent; color:var(--text-muted); border:1px solid var(--card-border); border-radius:10px; margin-top:8px; cursor:pointer;">Назад</button>
+            <button onclick="openReviewsModal()" style="width:100%; padding:12px; background:transparent; color:var(--text-muted); border:1px solid var(--card-border); border-radius:10px; margin-top:8px; cursor:pointer;">Назад</button>
         </div>
     `;
 }
@@ -347,19 +352,23 @@ function closeReviewsModal() {
     document.getElementById('reviewsModal').style.display = 'none';
 }
 
-function openTermsModal() {
-    document.getElementById('termsModal').style.display = 'flex';
-}
-
-function closeTermsModal() {
-    document.getElementById('termsModal').style.display = 'none';
-}
-
+// Заполнение профиля данными Telegram
 window.onload = () => {
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (user) {
+        const nameEl = document.getElementById('profileNameView');
         const usernameEl = document.getElementById('profileUsernameView');
-        if (usernameEl) usernameEl.innerText = user.first_name || user.username || 'Пользователь';
+        const avatarEl = document.getElementById('profileAvatar');
+
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Пользователь';
+        if (nameEl) nameEl.innerText = fullName;
+        if (usernameEl) usernameEl.innerText = user.username ? `@${user.username}` : `ID: ${user.id}`;
+        if (avatarEl) avatarEl.innerText = fullName.charAt(0).toUpperCase();
+    } else {
+        const nameEl = document.getElementById('profileNameView');
+        const usernameEl = document.getElementById('profileUsernameView');
+        if (nameEl) nameEl.innerText = 'Гость';
+        if (usernameEl) usernameEl.innerText = '@web_guest';
     }
 
     renderCatalog();
