@@ -198,7 +198,7 @@ bot.start((ctx) => {
     const userName = ctx.from.first_name || 'друг';
     ctx.reply(
         `👋 Привет, ${userName}!\n\n` +
-        `🛒 Добро пожаловать в WA Store — твой надежный магазин цифровых подписок в Казахстане.\n` +
+        `🛒 Добро пожаловать в Kinzly Store — твой надежный магазин цифровых подписок.\n` +
         `✨ Быстрая выдача, безопасная оплата и гарантия 24 часа.`,
         Markup.inlineKeyboard([
             [Markup.button.webApp('🛒 Открыть магазин', process.env.WEBAPP_URL || 'http://localhost:3000')]

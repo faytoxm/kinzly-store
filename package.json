@@ -1,6 +1,7 @@
 {
   "name": "kinzly-store",
   "version": "1.0.0",
+  "description": "Kinzly Store Telegram Mini App",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,5 +12,5 @@
     "dotenv": "^16.4.5",
     "telegraf": "^4.16.3",
     "stripe": "^14.14.0"
-}
+  }
 }
